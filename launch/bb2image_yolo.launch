@@ -1,7 +1,8 @@
+<?xml version="1.0"?>
 <launch>
 
 	<!-- Converts bounding box to image -->
-	<node type="bb2image.py" name="image2bbPed" pkg="image_inverse_sensor_model" respawn="true" output="screen">
+	<node type="bb2image.py" name="image2bbYolo" pkg="image_inverse_sensor_model" respawn="true" output="screen">
 		<param name="topicInName" value="/yolo/BBox/Multisense" />
 		<param name="imageWidth" value="512" />  	<!-- Half of 1024 is selected 1024/2 = 512 -->
 		<param name="imageHeight" value="217" />	<!-- Half of 544 is selected 544/2= 217 -->
@@ -12,7 +13,7 @@
 	</node>
 
 	<!-- Use perspektive mapping to transform a detection image to an inverse sensor model -->
-	<node type="image2ism.py" name="image2ismPedestrian" pkg="image_inverse_sensor_model" respawn="true" output="screen">
+	<node type="image2ism.py" name="image2ismYolo" pkg="image_inverse_sensor_model" respawn="true" output="screen">
 		<param name="topicIns" value="/det/Multisense/yolo/human /det/Multisense/yolo/vehicle /det/Multisense/yolo/animal /det/Multisense/yolo/obstacle" />
 		<param name="cam_FOV" value="0.78345" />	<!-- Half DiagonalFOV 1.5669/2 = 0.78345. This is found using calibration found in Demo_CalibrationCheckerBoardMiniSensorKit.m -->
 		<param name="imageWidth" value="512" />  	<!-- Half of 1024 is selected = 512 -->

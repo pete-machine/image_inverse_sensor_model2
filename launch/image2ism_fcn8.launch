@@ -1,3 +1,4 @@
+<?xml version="1.0"?>
 <launch>
 
 	<!-- Use perspektive mapping to transform a detection image to an inverse sensor model -->

@@ -1,3 +1,4 @@
+<?xml version="1.0"?>
 <launch>
 	<!-- Converts bounding box to image -->
 	<node type="bb2image.py" name="image2bbPed" pkg="image_inverse_sensor_model" respawn="true" output="screen">
