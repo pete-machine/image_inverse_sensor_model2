@@ -73,7 +73,6 @@ def callbackDetectionImageReceived(data):
     elif objectType == 'shelterbelt':
         objectExtent = 1.5
     elif objectType == 'anomaly':
-		print('Anomaly')
         objectExtent = 0.5
     elif objectType == 'heat':
         objectExtent = 0.5   
