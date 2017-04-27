@@ -72,8 +72,11 @@ def callbackDetectionImageReceived(data):
         objectExtent = 0.0
     elif objectType == 'shelterbelt':
         objectExtent = 1.5
+    elif objectType == 'anomaly':
+		print('Anomaly')
+        objectExtent = 0.5
     elif objectType == 'heat':
-        objectExtent = 0.5       
+        objectExtent = 0.5   
     else:
         objectExtent = 0.0
         
@@ -102,6 +105,7 @@ def callbackDetectionImageReceived(data):
     # print "Sequence value", data.header.frame_id
     # HACK: LOADS THE OBJECT TYPE FROM THE FRAME ID:
     #pubImageObjs[0].publish(grid_msg)
+    #print "data.header.frame_id:", data.header.frame_id, "objectType: ", objectType, "grid_msg.data.shape", grid_msg.data.shape, "pubImageObjsDictionary.keys()", pubImageObjsDictionary.keys()
     pubImageObjsDictionary[data.header.frame_id].publish(grid_msg)
 
 

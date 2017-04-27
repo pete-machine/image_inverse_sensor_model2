@@ -1,8 +1,16 @@
 <launch>
+
+<!-- ANOMALY ANOMALY ANOMALY ANOMALY ANOMALY ANOMALY ANOMALY ANOMALY ANOMALY ANOMALY ANOMALY ANOMALY ANOMALY ANOMALY ANOMALY ANOMALY -->
+
+
+	<include file="$(find image_inverse_sensor_model)/directory/image2ism_deepanomaly.launch"/>
+	
+<!-- ANOMALY ANOMALY ANOMALY ANOMALY ANOMALY ANOMALY ANOMALY ANOMALY ANOMALY ANOMALY ANOMALY ANOMALY ANOMALY ANOMALY ANOMALY ANOMALY -->
+
 <!-- PEDESTRIAN DETECTION PEDESTRIAN DETECTION PEDESTRIAN DETECTION PEDESTRIAN DETECTION PEDESTRIAN DETECTION PEDESTRIAN DETECTION -->
 	<!-- Converts bounding box to image -->
 	<node type="bb2image.py" name="image2bbPed" pkg="image_inverse_sensor_model" respawn="true" output="screen">
-		<param name="topicInName" value="/ped/BBox/Logitech_webcam/" />
+		<param name="topicInName" value="/ped/BBox/Multisense/" />
 		<param name="image_width" value="640" />
 		<param name="image_height" value="360" />
 		<param name="objectType_unknown" value="False" />
@@ -12,7 +20,7 @@
 
 	<!-- Use perspektive mapping to transform a detection image to an inverse sensor model -->
 	<node type="image2ism.py" name="image2ismPedestrian" pkg="image_inverse_sensor_model" respawn="true" output="screen">
-		<param name="topicIns" value="/det/Logitech_webcam/ped/human" />
+		<param name="topicIns" value="/det/Multisense/ped/human" />
 		<param name="imageWidth" value="640" />
 		<param name="imageHeight" value="360" />
 		<param name="cam_xTranslation" value="0.2038" /> 
@@ -27,23 +35,27 @@
 	</node>
 
 <!-- PEDESTRIAN DETECTION PEDESTRIAN DETECTION PEDESTRIAN DETECTION PEDESTRIAN DETECTION PEDESTRIAN DETECTION PEDESTRIAN DETECTION -->
+
 <!-- YOLO YOLO YOLO YOLO YOLO YOLO YOLO YOLO YOLO YOLO YOLO YOLO YOLO YOLO YOLO YOLO YOLO YOLO YOLO YOLO YOLO YOLO YOLO YOLO -->
 
 	<!-- Converts bounding box to image -->
 	<node type="bb2image.py" name="image2bbYolo" pkg="image_inverse_sensor_model" respawn="true" output="screen">
-		<param name="topicInName" value="/yolo/BBox/Logitech_webcam/" />
+		<param name="topicInName" value="/yolo/BBox/Multisense" />
 		<param name="image_width" value="640" />
-		<param name="image_height" value="480" />
-		<param name="objectType_unknown" value="True" />
-		<param name="objectType_vehicle" value="True" />
+		<param name="image_height" value="360" />
 		<param name="objectType_human" value="True" />
+		<param name="objectType_vehicle" value="True" />
+		<param name="objectType_animal" value="True" />
+		<param name="objectType_obstacle" value="True" />
 	</node>
 
 	<!-- Use perspektive mapping to transform a detection image to an inverse sensor model -->
 	<node type="image2ism.py" name="image2ismYolo" pkg="image_inverse_sensor_model" respawn="true" output="screen">
-		<param name="topicIns" value="/det/Logitech_webcam/yolo/unknown /det/Logitech_webcam/yolo/vehicle /det/Logitech_webcam/yolo/human" /> <!-- Add multiple topics by seperating them by a space-->
-		<param name="imageWidth" value="400" />
-		<param name="imageHeight" value="300" />
+		
+		<!-- Add multiple topics by seperating them by a space-->
+		<param name="topicIns" value="/det/Multisense/yolo/human /det/Multisense/yolo/vehicle /det/Multisense/yolo/animal /det/Multisense/yolo/obstacle" /> 
+		<param name="imageWidth" value="640" />
+		<param name="imageHeight" value="360" />
 		<param name="cam_xTranslation" value="0.2038" /> 
 		<param name="cam_yTranslation" value="0.255" />
 		<param name="cam_zTranslation" value="2.056" />
@@ -54,13 +66,16 @@
 		<param name="grid_xSizeInM" value="-1.0" />
 		<param name="grid_ySizeInM" value="-1.0" />
 	</node>
-
 <!-- YOLO YOLO YOLO YOLO YOLO YOLO YOLO YOLO YOLO YOLO YOLO YOLO YOLO YOLO YOLO YOLO YOLO YOLO YOLO YOLO YOLO YOLO YOLO YOLO -->
+
 <!-- SEMANCTIC SEGMENTATION SEMANCTIC SEGMENTATION SEMANCTIC SEGMENTATION SEMANCTIC SEGMENTATION SEMANCTIC SEGMENTATION SEMANCTIC SEGMENTATION -->
 
 	<!-- Use perspektive mapping to transform a detection image to an inverse sensor model -->
-	<node type="image2ism.py" name="image2ismSS" pkg="image_inverse_sensor_model" respawn="true" output="screen">
-		<param name="topicIns" value="/det/Logitech_webcam/semantic_segmentation/grass /det/Logitech_webcam/semantic_segmentation/ground /det/Logitech_webcam/semantic_segmentation/human /det/Logitech_webcam/semantic_segmentation/shelterbelt /det/Logitech_webcam/semantic_segmentation/unknown /det/Logitech_webcam/semantic_segmentation/vehicle /det/Logitech_webcam/semantic_segmentation/water" /> <!-- Add multiple topics by seperating them by a space in topicIns-->
+	<node type="image2ism.py" name="image2ismSS" pkg="image_inverse_sensor_model" respawn="true" output="screen">		
+
+		<!-- Add multiple topics by seperating them by a space in topicIns-->
+		<param name="topicIns" value="/det/Multisense/semantic_segmentation/grass /det/Multisense/semantic_segmentation/ground /det/Multisense/semantic_segmentation/human /det/Multisense/semantic_segmentation/shelterbelt /det/Multisense/semantic_segmentation/unknown /det/Multisense/semantic_segmentation/vehicle /det/Multisense/semantic_segmentation/water" /> 
+
 		<param name="imageWidth" value="600" />
 		<param name="imageHeight" value="300" />
 		<param name="cam_xTranslation" value="0.2038" /> 
@@ -114,5 +129,6 @@
 -->
 
 <!-- SEMANCTIC SEGMENTATION SEMANCTIC SEGMENTATION SEMANCTIC SEGMENTATION SEMANCTIC SEGMENTATION SEMANCTIC SEGMENTATION SEMANCTIC SEGMENTATION -->
+
 
 </launch>

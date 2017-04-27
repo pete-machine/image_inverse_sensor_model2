@@ -100,6 +100,13 @@ def inversePerspectiveMapping(width, height, x, y, z, pitch, yaw, alpha):
     Yvis = tmp[1,].reshape(np.shape(Xvis))
     return (Xvis, Yvis,rHorizon)
 
+# Xvis,Yvix: Defines lookup table from above
+# inputImage: A monochromatic "image" in [0-255] remapped in the range [0.5-0.8]. 
+# 		Areas: 
+#			visibleArea: In visible areas, (and if nothing is detected) the likelihood of an obstacle is less than 0.5. (E.g. 0.4) 
+#			pNonVisible: In non-visible areas (outside the camera field-of-view), the likelihood of an obstacle is typically 0.5.
+#			pMaxVisible: In detected areas, the likelihood of an obstacle is between 0.5 and the maximum likelihodd (e.g. 0.8). The input image in range [0;255] is mapped between 0.5 to 0.8(pMaxVisible). 
+
 def image2ogm(Xvis,Yvis,inputImage,rHorizon,grid_xSizeInM,grid_ySizeInM,grid_resolution,objectExtent):
         
     mmX = np.array([Xvis.min(), Xvis.max()]); 

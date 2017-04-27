@@ -45,16 +45,24 @@ topicInName  = rospy.get_param(nodeName+'/topicInName', '/bbUnknownObjects')
 imgDimWidth  = rospy.get_param(nodeName+'/imgDimWidth', 800)
 imgDimHeight = rospy.get_param(nodeName+'/imgDimHeight', 600)
 
+#def numbers_to_strings(argument):
+#    switcher = {
+#        0: "unknown",
+#        1: "vehicle",
+#        2: "human",
+#    }
+#    return switcher.get(argument, "Unknown")
 def numbers_to_strings(argument):
     switcher = {
-        0: "unknown",
+        0: "human",
         1: "vehicle",
-        2: "human",
+        2: "animal",
+		3: "obstacle",
     }
     return switcher.get(argument, "Unknown")
 
 
-objectTypes =  np.array([False, False, False])
+objectTypes =  np.array([False, False, False, False])
 for iObj in range(0,len(objectTypes)):
     objectTypes[iObj] = rospy.get_param(nodeName+'/objectType_'+numbers_to_strings(iObj), False)
 
