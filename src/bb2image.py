@@ -55,14 +55,13 @@ imgDimHeight = rospy.get_param(nodeName+'/imgDimHeight', 600)
 def numbers_to_strings(argument):
     switcher = {
         0: "human",
-        1: "vehicle",
-        2: "animal",
-		3: "obstacle",
+        1: "other",
+        2: "unknown",
     }
-    return switcher.get(argument, "Unknown")
+    return switcher.get(argument, "BadNumber")
 
 
-objectTypes =  np.array([False, False, False, False])
+objectTypes =  np.array([False, False, False])
 for iObj in range(0,len(objectTypes)):
     objectTypes[iObj] = rospy.get_param(nodeName+'/objectType_'+numbers_to_strings(iObj), False)
 
