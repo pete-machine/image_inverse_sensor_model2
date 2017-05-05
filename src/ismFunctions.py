@@ -145,7 +145,7 @@ def image2ogm(Xvis,Yvis,inputImage,rHorizon,grid_xSizeInM,grid_ySizeInM,grid_res
     
     pNonVisibleAreaFloat = 0.5;
     pNonVisibleArea = 255*pNonVisibleAreaFloat
-    pVisibleAreaFloat = 0.4;
+    pVisibleAreaFloat = 0.5; # Originally set to 0.4
     pVisibleArea = 255*pVisibleAreaFloat
     pMaxLikelihoodFloat = 0.8;
     pMaxLikelihood = 255*pMaxLikelihoodFloat
