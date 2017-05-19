@@ -45,7 +45,7 @@ def inversePerspectiveMapping(width, height, x, y, z, pitch, yaw, alpha):
     # (if we were really on a planar road) seems to be about:
     #rHorizon = horizon;
     rHorizon = int(np.ceil( (m-1)/2*(1 - np.tan(pitch)/np.tan(alpha)) + 1 ));
-    rHorizon = rHorizon + 20; # To be sure
+    rHorizon = rHorizon + int(height*0.05); # To avoid mapping points in and above the horison. The rhorizon is set to 5% below the actual horison. 
 
     h = z; # Height over feature
     transM = np.array([[1, 0, 0, x],[0, 1, 0, y],[0, 0, 1, 0],[0, 0, 0, 1]])
