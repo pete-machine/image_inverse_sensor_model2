@@ -23,24 +23,24 @@ alpha_v = (78/2)*np.pi/180
 
 grid_xSizeInM = -1.0
 grid_ySizeInM = -1.0
-grid_resolution = 0.1
+grid_resolution = 0.01
 # Get the lookup tables
 (Xvis, Yvis,rHorizon) = inversePerspectiveMapping(anomaly.shape[1], anomaly.shape[0], 0, 0, 1.5, theta0 , 10*np.pi/180, alpha_v);
 
     
 start_time = time.time()
-grid,nGridX,nGridY, dist_x1, dist_y1 = image2ogm(Xvis,Yvis,anomaly,rHorizon,grid_xSizeInM,grid_ySizeInM,grid_resolution)
+(grid, nGridX, nGridY, dist_x, dist_y,IcroppedTransformed) = image2ogm(Xvis,Yvis,anomaly,rHorizon,grid_xSizeInM,grid_ySizeInM,grid_resolution,0.0)
 print("--- image2ogm %s seconds ---" % (time.time() - start_time))
 #gridOut = flipud(grid)
 #b = np.ascontiguousarray(xyvalPos).view(np.dtype((np.void, xyvalPos.dtype.itemsize * xyvalPos.shape[1])))
 #_, idx = np.unique(b, return_index=True)
 #test = xyvalPos[idx]
 
-imgplot1 = plt.matshow(anomaly)
+imgplot1 = plt.imshow(anomaly)
 #imgplot1 = plt.matshow(Icropped)
 #imgplot1 = plt.matshow(gridObstacle)
 #imgplot2 = plt.matshow(gridBase)
-imgplot3 = plt.matshow(grid)
+imgplot3 = plt.imshow(grid)
 
 
 
