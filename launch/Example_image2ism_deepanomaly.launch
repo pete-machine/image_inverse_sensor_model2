@@ -17,7 +17,7 @@
 		<param name="cam_zTranslation" value="2.056" />
 		<param name="cam_pitch" value="0.1963" />  
 		<param name="cam_yaw" value="0.0" />
-		<param name="grid_resolution" value="0.5" />
+		<param name="grid_resolution" value="0.25" />
 	</node>
 
 

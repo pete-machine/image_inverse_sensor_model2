@@ -31,7 +31,12 @@ cam_FOV = rospy.get_param(nodeName+'/cam_FOV', 0.349) # 20*pi/180
 grid_resolution = rospy.get_param(nodeName+'/grid_resolution', 0.05) # 10*pi/180
 grid_xSizeInM = rospy.get_param(nodeName+'/grid_xSizeInM', -1.0) # For values <0 length of X is scaled automatically
 grid_ySizeInM = rospy.get_param(nodeName+'/grid_ySizeInM', -1.0) # For values <0 length of Y is scaled automatically    
-    
+minLikelihood = rospy.get_param(nodeName+'/min_likelihood', 0.4) 
+maxLikelihood = rospy.get_param(nodeName+'/max_likelihood', 0.8)
+ignoreRectangle = rospy.get_param(nodeName+'/ignore_rectangle', False)
+strIgnoreRectangleCoordinates = rospy.get_param(nodeName+'/ignore_rectangle_coordinates', "0.0 1.0 0.0 0.222") # normalized coordinates (rowMin, rowMax, colMin, colMax).
+
+ignoreRectangleCoord = [float(strPartCoord) for strPartCoord in strIgnoreRectangleCoordinates.split(' ')] 
 (Xvis, Yvis,rHorizon) = inversePerspectiveMapping(imageWidth, imageHeight, cam_xTranslation, cam_yTranslation, cam_zTranslation, cam_pitch, cam_yaw, cam_FOV);
 
 topics = topicsInName.split(' ')
@@ -46,32 +51,40 @@ for iTopic in range(0,len(topics)):
     
 bridge = CvBridge()
 
+
+
+
 vectorLength = 6
 def callbackDetectionImageReceived(data):
-    cv_image = bridge.imgmsg_to_cv2(data, "mono8")
+    cv_image = bridge.imgmsg_to_cv2(data, "mono8").astype(float)
     cv_image = cv2.resize(cv_image,(imageWidth, imageHeight))
-    #cv_image = cv2.imread('/home/repete/blank_ws/src/image_inverse_sensor_model/src/tmpImage.png',0)
+
     # Hack
-    
     strParts = data.header.frame_id.split('/')
     objectType = strParts[-1]
+
+    if ignoreRectangle:
+	setIndices = (np.array([cv_image.shape[0],cv_image.shape[0],cv_image.shape[1],cv_image.shape[1]])*np.array(ignoreRectangleCoord)).astype(int)
+        cv_image[setIndices[0]:setIndices[1],setIndices[2]:setIndices[3]] = -10
+
+
     if objectType == 'human':
+        objectExtent = 0.4
+        #print(cv_image)
+    elif objectType == 'other':
         objectExtent = 0.5
     elif objectType == 'unknown':
-        objectExtent = 1.0
+        objectExtent = 0.5
     elif objectType == 'vehicle':
-        objectExtent = 2.0
-#        if(strParts[-2] == 'semantic_segmentation'):
-#            cv2.imwrite("/home/repete/Desktop/TmpImages/image" + str(data.header.seq) + ".png", cv_image);
+        objectExtent = 1.5
     elif objectType == 'water':
         objectExtent = 0.0
     elif objectType == 'grass':
-
         objectExtent = 0.0
     elif objectType == 'ground':
         objectExtent = 0.0
     elif objectType == 'shelterbelt':
-        objectExtent = 1.5
+        objectExtent = 0.0
     elif objectType == 'anomaly':
         objectExtent = 0.5
     elif objectType == 'heat':
@@ -79,10 +92,11 @@ def callbackDetectionImageReceived(data):
     else:
         objectExtent = 0.0
         
+    #,ignoreRectangle,ignoreRectangleCoord
     #(Xvis, Yvis) = inversePerspectiveMapping(cv_image.shape[1], cv_image.shape[0], rHorizon, 0, 0, 1.5, 20*np.pi/180, 10*np.pi/180, 20*np.pi/180);
     #print objectType, objectExtent
     #tStart = time.time()
-    grid, nGridX, nGridY, dist_x1, dist_y1,empty = image2ogm(Xvis,Yvis,cv_image,rHorizon,grid_xSizeInM,grid_ySizeInM,grid_resolution,objectExtent)
+    grid, nGridX, nGridY, dist_x1, dist_y1,empty = image2ogm(Xvis,Yvis,cv_image,rHorizon,grid_xSizeInM,grid_ySizeInM,grid_resolution,objectExtent,minLikelihood,maxLikelihood)
     #print "Elapsed on Image2ism: ", time.time()-tStart
     #image_message = bridge.cv2_to_imgmsg(grid, encoding="mono8")
     #pubImage.publish(image_message)
@@ -104,7 +118,7 @@ def callbackDetectionImageReceived(data):
     # print "Sequence value", data.header.frame_id
     # HACK: LOADS THE OBJECT TYPE FROM THE FRAME ID:
     #pubImageObjs[0].publish(grid_msg)
-    #print "data.header.frame_id:", data.header.frame_id, "objectType: ", objectType, "grid_msg.data.shape", grid_msg.data.shape, "pubImageObjsDictionary.keys()", pubImageObjsDictionary.keys()
+
     pubImageObjsDictionary[data.header.frame_id].publish(grid_msg)
 
 
