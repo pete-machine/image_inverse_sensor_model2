@@ -47,6 +47,7 @@ def inversePerspectiveMapping(width, height, x, y, z, pitch, yaw, alpha):
     rHorizon = int(np.ceil( (m-1)/2*(1 - np.tan(pitch)/np.tan(alpha)) + 1 ));
     rHorizon = rHorizon + int(m*0.05); # To be sure
 
+
     h = z; # Height over feature
     transM = np.array([[1, 0, 0, x],[0, 1, 0, y],[0, 0, 1, 0],[0, 0, 0, 1]])
     rotM = np.array([[np.cos(yaw), -np.sin(yaw), 0, 0],[np.sin(yaw), np.cos(yaw), 0, 0],[0, 0, 1, 0],[0, 0, 0, 1]])
