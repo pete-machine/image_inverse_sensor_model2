@@ -24,12 +24,14 @@ alpha_v = (78/2)*np.pi/180
 grid_xSizeInM = -1.0
 grid_ySizeInM = -1.0
 grid_resolution = 0.1
+minLikelihood = 0.4
+maxLikelihood = 0.8
 # Get the lookup tables
 (Xvis, Yvis,rHorizon) = inversePerspectiveMapping(anomaly.shape[1], anomaly.shape[0], 0, 0, 1.5, theta0 , 10*np.pi/180, alpha_v);
 
     
 start_time = time.time()
-grid,nGridX,nGridY, dist_x1, dist_y1 = image2ogm(Xvis,Yvis,anomaly,rHorizon,grid_xSizeInM,grid_ySizeInM,grid_resolution)
+grid,nGridX,nGridY, dist_x1, dist_y1 = image2ogm(Xvis,Yvis,anomaly,rHorizon,grid_xSizeInM,grid_ySizeInM,grid_resolution,minLikelihood,maxLikelihood)
 print("--- image2ogm %s seconds ---" % (time.time() - start_time))
 #gridOut = flipud(grid)
 #b = np.ascontiguousarray(xyvalPos).view(np.dtype((np.void, xyvalPos.dtype.itemsize * xyvalPos.shape[1])))

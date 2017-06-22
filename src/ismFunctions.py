@@ -108,8 +108,9 @@ def inversePerspectiveMapping(width, height, x, y, z, pitch, yaw, alpha):
 #			pNonVisible: In non-visible areas (outside the camera field-of-view), the likelihood of an obstacle is typically 0.5.
 #			pMaxVisible: In detected areas, the likelihood of an obstacle is between 0.5 and the maximum likelihodd (e.g. 0.8). The input image in range [0;255] is mapped between 0.5 to 0.8(pMaxVisible). 
 
-def image2ogm(Xvis,Yvis,inputImage,rHorizon,grid_xSizeInM,grid_ySizeInM,grid_resolution,objectExtent,minLikelihood,maxLikelihood):
-        
+
+
+def baseGrid(Xvis,Yvis,rHorizon,grid_xSizeInM,grid_ySizeInM,grid_resolution,pVisibleArea,pNonVisibleArea):
     mmX = np.array([Xvis.min(), Xvis.max()]); 
     mmY = np.array([Yvis.min(), Yvis.max()]); 
     diffX = np.diff(mmX);
@@ -128,15 +129,7 @@ def image2ogm(Xvis,Yvis,inputImage,rHorizon,grid_xSizeInM,grid_ySizeInM,grid_res
         
     nGridX = int(gridSizeXIn/resolution);
     nGridY = int(gridSizeYIn/resolution);  
-    Icropped = inputImage[rHorizon-2:-1,:]
 
-#    try:
-    IcroppedTransformed = TransformImageAccordingToObjectExtend(Xvis,Yvis,Icropped,objectExtent)
-
-
-#    except: 
-#        print "ERROR: Save mage: shape: ", inputImage.shape 
-#        cv2.imwrite('/home/repete/CRAP/testImage' + str(time.time()-tStart) + '.png',Icropped)
     dist_x = mmX[0]
     dist_y = mmY[0]
     
@@ -145,17 +138,8 @@ def image2ogm(Xvis,Yvis,inputImage,rHorizon,grid_xSizeInM,grid_ySizeInM,grid_res
     
     
     
-    
-    pNonVisibleAreaFloat = 0.5;
-    pNonVisibleArea = 255*pNonVisibleAreaFloat
-    pVisibleAreaFloat = minLikelihood; # Originally set to 0.4
-    pVisibleArea = 255*pVisibleAreaFloat
-    pMaxLikelihoodFloat = maxLikelihood; # Originally set to 0.8
-    pMaxLikelihood = 255*pMaxLikelihoodFloat
-    factor = (pMaxLikelihoodFloat-pNonVisibleAreaFloat);
     # maxVisualDistance = 8; % in Meter
     # maxVisualGridDistance = (maxVisualDistance-mmX(1))/resolution;
-
     
     ## gridBase2 = zeros(nGridY,nGridX);    
     
@@ -167,8 +151,44 @@ def image2ogm(Xvis,Yvis,inputImage,rHorizon,grid_xSizeInM,grid_ySizeInM,grid_res
     mask[rr,cc] = pVisibleArea-pNonVisibleArea
     gridBase = mask+gridBase;
     
+    return (gridBase,Xtrans,Ytrans,dist_x,dist_y)
+
+
+def bb2ogm(Xvis,Yvis,rHorizon,grid_xSizeInM,grid_ySizeInM,grid_resolution,objectExtent,minLikelihood,maxLikelihood):
     
+    pNonVisibleAreaFloat = 0.5;
+    pNonVisibleArea = 255*pNonVisibleAreaFloat
+    pVisibleAreaFloat = minLikelihood; # Originally set to 0.4
+    pVisibleArea = 255*pVisibleAreaFloat
+    pMaxLikelihoodFloat = maxLikelihood; # Originally set to 0.8
+    # pMaxLikelihood = 255*pMaxLikelihoodFloat
+    factor = (pMaxLikelihoodFloat-pNonVisibleAreaFloat);
     
+    (gridBase,Xtrans,Ytrans,dist_x,dist_y) = baseGrid(Xvis,Yvis,rHorizon,grid_xSizeInM,grid_ySizeInM,grid_resolution,pVisibleArea,pNonVisibleArea)
+    nGridY = gridBase.shape[0]
+    nGridX = gridBase.shape[1]
+    
+    grid = gridBase;
+    return (grid, nGridX, nGridY, dist_x, dist_y)
+
+def image2ogm(Xvis,Yvis,inputImage,rHorizon,grid_xSizeInM,grid_ySizeInM,grid_resolution,objectExtent,minLikelihood,maxLikelihood):
+        
+
+    pNonVisibleAreaFloat = 0.5;
+    pNonVisibleArea = 255*pNonVisibleAreaFloat
+    pVisibleAreaFloat = minLikelihood; # Originally set to 0.4
+    pVisibleArea = 255*pVisibleAreaFloat
+    pMaxLikelihoodFloat = maxLikelihood; # Originally set to 0.8
+    # pMaxLikelihood = 255*pMaxLikelihoodFloat
+    factor = (pMaxLikelihoodFloat-pNonVisibleAreaFloat);    
+    
+    (gridBase,Xtrans,Ytrans,dist_x,dist_y) = baseGrid(Xvis,Yvis,rHorizon,grid_xSizeInM,grid_ySizeInM,grid_resolution,pVisibleArea,pNonVisibleArea)
+
+    nGridY = gridBase.shape[0]
+    nGridX = gridBase.shape[1]
+
+    Icropped = inputImage[rHorizon-2:-1,:]
+    IcroppedTransformed = TransformImageAccordingToObjectExtend(Xvis,Yvis,Icropped,objectExtent)
     gridObstacle = np.zeros((nGridY,nGridX))
     
     
