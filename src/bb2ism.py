@@ -13,7 +13,7 @@ from skimage.draw import polygon
 
 class Bb2ism:
 
-    def __init__(self, hFOV, localizationErrorStd,localizationErrorStdEnd = [], degradOutlook = False, degradOutlookAfterM=0.0, max_distance=50,grid_resolution=0.1,pVisible=0.4 ,pNonVisible=0.5,pMaxLikelyhood=0.8):
+    def __init__(self, hFOV, localizationErrorStd,localizationErrorStdEnd = [], degradeOutlook = False, degradeOutlookAfterM=0.0, max_distance=50,grid_resolution=0.1,pVisible=0.4 ,pNonVisible=0.5,pMaxLikelyhood=0.8):
 
         
         self.grid_resolution = grid_resolution
@@ -29,17 +29,15 @@ class Bb2ism:
         
         # Empty grid map
         self.baseGrid = pNonVisible*np.ones((self.gridHeight,self.gridWidth))
-        self.gridOriginXYZ = np.array([0,-gridHeightDistance/2.0,0])
-        #detectionGrid = np.zeros((self.gridHeight,self.gridWidth))
-        
+        self.gridOriginXYZ = np.array([0,-gridHeightDistance/2.0,0])        
         
         if(localizationErrorStdEnd == []):
             localizationErrorStdEnd = np.copy(localizationErrorStd)
+            
         # Gaussian mask grid
         scaleStd = localizationErrorStd/self.grid_resolution
         scaleStdEnd = localizationErrorStdEnd/self.grid_resolution
-        #print("localizationErrorStd: ",localizationErrorStd,localizationErrorStd/self.grid_resolution,"localizationErrorStdEnd: ",localizationErrorStdEnd,localizationErrorStdEnd/self.grid_resolution)
-        #print("scaleStd: ",scaleStd,"scaleStdEnd: ",scaleStdEnd)
+        
         X = np.array([0.0,max_distance/self.grid_resolution])
         self.aStd = np.array([np.diff([scaleStd[0],scaleStdEnd[0]])/np.diff(X),np.diff([scaleStd[1],scaleStdEnd[1]])/np.diff(X)])
         self.bStd = np.expand_dims(scaleStd,1)
@@ -50,7 +48,7 @@ class Bb2ism:
         self.coord2mapTranslation = np.array([rowShift,colShift])
         self.coord2mapRotation = 0.0
         
-        degradOutlookAfter = degradOutlookAfterM/self.grid_resolution
+        degradOutlookAfter = degradeOutlookAfterM/self.grid_resolution
         
         # Visible area
         if(pVisible != pNonVisible):
@@ -59,9 +57,9 @@ class Bb2ism:
             rr, cc = polygon(ptFovY, ptFovX)
             
             # 
-            if(degradOutlook):
+            if(degradeOutlook):
                 # Degrading certainty of how well 
-                if(True):
+                if(False):
                     rrcc = np.vstack((rr,cc)).T
                     ptBase = np.array(self.coord2mapTranslation,ndmin=2);
                     baseValues = np.maximum(cdist(ptBase,rrcc)-degradOutlookAfter,0)
@@ -78,8 +76,9 @@ class Bb2ism:
 
     def drawDetection(self, xy,detectionGrid):
         xy = np.array(xy)
-        ptAngle = -np.arctan2(xy[1],xy[0])
         
+        ptAngle = -np.arctan2(xy[1],xy[0])
+        conf = xy[2]
             
         # If you wanna use matrix-multiplications for transforming points
         #MrotateTranslate = np.array([[np.cos(yaw), -np.sin(yaw), rowShift],[np.sin(yaw), np.cos(yaw), colShift],[0, 0, 1]])
@@ -94,7 +93,7 @@ class Bb2ism:
         
         useSingleTransform = False;
         
-        # Calculate new localization error (proportional to distance)
+        # Calculate new localization error (proportional to distance from camera)
         std = self.aStd*rcDist+self.bStd
         
         
@@ -111,7 +110,6 @@ class Bb2ism:
         self.pos[:, :, 0] = x 
         self.pos[:, :, 1] = y
         
-        #std = [self.scaleStd[0],self.scaleStd[1]]
         if(useSingleTransform):
             # Rotate and scale the identity matrix (eye)
             Mscale = np.array([[std[0],0], [0,std[1]]]);
@@ -129,7 +127,6 @@ class Bb2ism:
         # Scale gaussian map. 
         #mvgRange = (pMaxLikelyhood-pVisible)
         
-        #z[z>0.10] = z[z>0.10]
         dimMask = z.shape
         # Indices for cropping section from big map (same size as the gaussian mask)
         rCrop = np.array([rc_grid[0]-dimMask[0]/2,rc_grid[0]+dimMask[0]/2+1])
@@ -143,34 +140,37 @@ class Bb2ism:
         rCrop = np.minimum(np.maximum(rCrop,0),self.gridHeight)
         cCrop = np.minimum(np.maximum(cCrop,0),self.gridWidth)
         
-        # Two methods for placing a guassian distribution at the center of a detection in the map (Use method 2)
-        method1 = False
-        if(method1):
-            mvgRange = (self.pMaxLikelyhood-self.pVisible)
-            
-            # Scale gaussian distribution.
-            z = z*mvgRange/np.max(z)
-            detectionGrid[rCrop[0]:rCrop[1],cCrop[0]:cCrop[1]] = detectionGrid[rCrop[0]:rCrop[1],cCrop[0]:cCrop[1]]+z[rCropZ[0]:rCropZ[1],cCropZ[0]:cCropZ[1]]
-            
-        else:
-            mvgRange = (self.pMaxLikelyhood-self.pNonVisible)
-            
-            # Normalize distribution.
-            z = z*mvgRange/np.max(z)
-            
-            # Many weired tricks to place the gaussian in the map. 
-            edgeMax = np.max([np.max(z[0,:]),np.max(z[:,0])])
-            cropZ = z[rCropZ[0]:rCropZ[1],cCropZ[0]:cCropZ[1]]
-            cropBase = detectionGrid[rCrop[0]:rCrop[1],cCrop[0]:cCrop[1]]
-            cropBase[cropZ>edgeMax] = cropZ[cropZ>edgeMax]+self.pNonVisible+np.maximum(0,cropBase[cropZ>edgeMax]-0.5)
-            detectionGrid[rCrop[0]:rCrop[1],cCrop[0]:cCrop[1]] = cropBase
+        if min(rCropZ[1],cCropZ[1])>0:
+            # Two methods for placing a guassian distribution at the center of a detection in the map (Use method 2)
+            method1 = False
+            if(method1):
+                mvgRange = conf*(self.pMaxLikelyhood-self.pVisible)
+                
+                # Scale gaussian distribution.
+                z = z*mvgRange/np.max(z)
+                detectionGrid[rCrop[0]:rCrop[1],cCrop[0]:cCrop[1]] = detectionGrid[rCrop[0]:rCrop[1],cCrop[0]:cCrop[1]]+z[rCropZ[0]:rCropZ[1],cCropZ[0]:cCropZ[1]]
+                
+            else:
+                mvgRange = conf*(self.pMaxLikelyhood-self.pNonVisible)
+                
+                # Normalize distribution.
+                z = z*mvgRange/np.max(z)
+                
+                # Many weired tricks to place the gaussian in the map. 
+                edgeMax = np.max([np.max(z[0,:]),np.max(z[:,0])])
+                cropZ = z[rCropZ[0]:rCropZ[1],cCropZ[0]:cCropZ[1]]
+                cropBase = detectionGrid[rCrop[0]:rCrop[1],cCrop[0]:cCrop[1]]
+                #print(rCrop,cCrop,rCropZ,cCropZ)
+                cropBase[cropZ>edgeMax] = cropZ[cropZ>edgeMax]+self.pNonVisible+np.maximum(0,cropBase[cropZ>edgeMax]-0.5)
+                detectionGrid[rCrop[0]:rCrop[1],cCrop[0]:cCrop[1]] = cropBase
             
         return detectionGrid
     
     def drawDetections(self, xyz):
         detectionGrid = np.copy(self.baseGrid)
-        print("xyz: ", xyz)
+        
         self.nDetections = len(xyz)
+        #print("xyz: ", xyz, ", nDetections: ", self.nDetections)
         
         # Draw in all detections
         for iPoint in range(self.nDetections):

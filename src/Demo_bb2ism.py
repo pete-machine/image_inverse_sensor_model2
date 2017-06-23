@@ -19,16 +19,29 @@ import os
 
 max_distance = 30.0 # max distance
 hFOV =  np.pi*82.62/180 #np.pi/4 # Horisontal field of view. # 
-grid_resolution = 0.2
+grid_resolution = 0.5
 pVisible = 0.4
 pNonVisible = 0.5
 pMaxLikelyhood = 0.8
-degradOutlook = True
-degradOutlookAfterM = 20.0 # distance
+degradeOutlook = True
+degradeOutlookAfterM = 10.0 # distance
 localizationErrorStd = np.array([.1, 0.8]) # 
 localizationErrorStdEnd = np.array([.4, 2.0]) # 
 
 
+import sys
+
+
+def dVars(*strExpressions):
+    frame = sys._getframe(1)
+    for strExp in strExpressions:
+        print strExp, ": ",  frame.f_globals[strExp]
+        
+    #dictOut = {strExp : frame.f_globals[strExp] for strExp in strExpressions}
+    #print dictOut
+
+
+#print(debug(bar))
 
 
 
@@ -47,13 +60,13 @@ bStd = np.expand_dims(localizationErrorStd,1)
 
 aStd*30.0+bStd
 # 
-xyz = [[4,1],[17,10],[12,-5],[31,8],[25,-21]]
+xyz = [[4,1,1.0],[17,10,0.5],[12,-5,1.0],[31,8,1.0],[25,-21,0.5],[40.9702127, -0.44210202, 1.0]]
 #xyz = []
 #xyz = np.array([[7,2],[16,12],[25,-10],[29,8]])
 
 t0 = time.time()
 
-bb2ism = Bb2ism(hFOV, localizationErrorStd,localizationErrorStdEnd, degradOutlook, degradOutlookAfterM, max_distance,grid_resolution,pVisible,pNonVisible,pMaxLikelyhood)
+bb2ism = Bb2ism(hFOV, localizationErrorStd,localizationErrorStdEnd, degradeOutlook, degradeOutlookAfterM, max_distance,grid_resolution,pVisible,pNonVisible,pMaxLikelyhood)
 
 t1 = time.time()
 
