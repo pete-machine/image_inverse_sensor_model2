@@ -21,10 +21,12 @@ configFile = rospy.get_param(nodeName+'/config_file', 'cfg/bb2ismExample.cfg')
 topicOutPrefix = rospy.get_param(nodeName+'/topic_out_prefix', '/ism')
 grid_resolution = rospy.get_param(nodeName+'/grid_resolution', 0.1)
 hFOV = rospy.get_param(nodeName+'/cam_horisontal_FOV', np.pi/2)
-strLocalizationErrorStd = rospy.get_param(nodeName+'/localization_error_std', '0.8 4.0') # Two floats seperated by space. 
-strLocalizationErrorStdEnd = rospy.get_param(nodeName+'/localization_error_std_end', strLocalizationErrorStd) # Two floats seperated by space. 
+strLocalizationErrorStd = rospy.get_param(nodeName+'/localization_error_std', '0.8 4.0') # Two floats seperated by space.
+strLocalizationErrorStdEnd = rospy.get_param(nodeName+'/localization_error_std_end', strLocalizationErrorStd) # Two floats seperated by space.
 localizationErrorStd = np.array([float(value) for value in strLocalizationErrorStd.split(' ')])
 localizationErrorStdEnd = np.array([float(value) for value in strLocalizationErrorStdEnd.split(' ')])
+
+
 pVisible = rospy.get_param(nodeName+'/p_visible', 0.4)
 pMaxLikelyhood = rospy.get_param(nodeName+'/p_max_likelyhood', 0.8)
 max_distance = rospy.get_param(nodeName+'/max_distance', 50.0)
