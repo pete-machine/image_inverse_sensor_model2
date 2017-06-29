@@ -85,31 +85,34 @@ def callback_bbReceived(markerArray):
             pt.header = marker.header
             pt.point = marker.pose.position
 
+
+            # Bug-fix. To remove the first '/' in frame. E.g. '/Multisensor/blah' --> 'Multisensor/blah' 
+            strParts = marker.header.frame_id.split('/')
+            if strParts[0] is '':
+                cCameraFrame = str.join('/',strParts[1:])
+            else:
+                cCameraFrame = marker.header.frame_id
+            validTransform = True
             
             # Get transformation. If get transformation fails do noting.
-            try:
-            
-                # Bug-fix. To remove the first '/' in frame. E.g. '/Multisensor/blah' --> 'Multisensor/blah' 
-                strParts = marker.header.frame_id.split('/')
-                if strParts[0] is '':
-                    cCameraFrame = str.join('/',strParts[1:])
-                else:
-                    cCameraFrame = marker.header.frame_id
-                
+            try:                
                 # Get transform                
                 trans = tfBuffer.lookup_transform(targetFrameId,cCameraFrame, rospy.Time()) #marker.header.stamp) 
                 
                 # Transform camera point to 
                 pt = tf2_geometry_msgs.do_transform_point(pt, trans)
-                
+                                
+            except Exception as e: #(tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
+                print("In bb2ism_ros node. No transform is found. Except: ",e.message,e.args)
+                validTransform = False
+            
+            
+            if validTransform == True:
                 # Get class type from namespace
                 strClassName = marker.ns.split('/')[-1]
                 
                 # Append point to a dictionary-class.
                 xyz_conf[strClassName].append(np.array([pt.point.x,pt.point.y,marker.color.a]))
-                
-            except Exception as e: #(tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
-                print("In bb2ism_ros node. No transform is found. Except: ",e.message,e.args)
                 
             
 
