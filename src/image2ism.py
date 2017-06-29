@@ -64,7 +64,7 @@ def callbackDetectionImageReceived(data):
     objectType = strParts[-1]
 
     if ignoreRectangle:
-	setIndices = (np.array([cv_image.shape[0],cv_image.shape[0],cv_image.shape[1],cv_image.shape[1]])*np.array(ignoreRectangleCoord)).astype(int)
+        setIndices = (np.array([cv_image.shape[0],cv_image.shape[0],cv_image.shape[1],cv_image.shape[1]])*np.array(ignoreRectangleCoord)).astype(int)
         cv_image[setIndices[0]:setIndices[1],setIndices[2]:setIndices[3]] = -10
 
 
