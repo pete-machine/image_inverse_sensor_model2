@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<launch>
+
+	<!-- Use perspektive mapping to transform a detection image to an inverse sensor model -->
+	<node type="bb2ism_ros.py" name="bb2ismFcn8" pkg="image_inverse_sensor_model" respawn="true" output="screen">
+		<param name="topic_in" value="/det/Multisense/deepanomaly/BBoxes3d" />
+		<param name="config_file" value="$(find image_inverse_sensor_model)/cfg/bb2ismAnomaly.cfg" />
+		<param name="topic_out_prefix" value="/ism/Multisense/fcn8/" />
+		<param name="grid_resolution" value="1.0" />
+		<param name="cam_horisontal_FOV" value="1.442" />	<!-- Full horisontal FOV. From Demo_CalibrationCheckerBoardMiniSensorKit.m -->
+		<param name="localization_error_std" value="0.2 1.0" />
+		<param name="localization_error_std_end" value="0.6 3.0" />
+		<param name="p_visible" value="0.4" />
+		<param name="p_max_likelyhood" value="0.8" />
+		<param name="max_distance" value="50.0" />
+		<param name="base_frame_id" value="base_link_mount" />
+
+		<param name="degrade_outlook" value="True" />
+		<param name="degrade_outlook_afterM" value="10.0" />
+
+
+	</node>
+
+</launch>

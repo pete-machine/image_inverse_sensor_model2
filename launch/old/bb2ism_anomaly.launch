@@ -5,7 +5,7 @@
 	<node type="bb2ism_ros.py" name="bb2ismAnomaly" pkg="image_inverse_sensor_model" respawn="true" output="screen">
 		<param name="topic_in" value="/det/Multisense/deepanomaly/BBoxes3d" />
 		<param name="config_file" value="$(find image_inverse_sensor_model)/cfg/bb2ismAnomaly.cfg" />
-		<param name="topic_out_prefix" value="/ism/Multisense/yolo/" />
+		<param name="topic_out_prefix" value="/ism/Multisense/deepanomaly/" />
 		<param name="grid_resolution" value="1.0" />
 		<param name="cam_horisontal_FOV" value="1.442" />	<!-- Full horisontal FOV. From Demo_CalibrationCheckerBoardMiniSensorKit.m -->
 		<param name="localization_error_std" value="0.2 1.0" />
