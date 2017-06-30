@@ -76,7 +76,7 @@ class Bb2ism:
 
     def drawDetection(self, xy,detectionGrid):
         xy = np.array(xy)
-        
+        #print "In bb2ism, xy: ", xy 
         ptAngle = -np.arctan2(xy[1],xy[0])
         conf = xy[2]
             

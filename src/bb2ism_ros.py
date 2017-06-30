@@ -51,7 +51,7 @@ for strClass in strsClassNumberAndName:
     strNumberAndClass = strClass.split(' ')
     
     topicOutName = os.path.join(topicOutPrefix,strNumberAndClass[1])
-    print('Class: ',  int(strNumberAndClass[0]), ', ObjectType: ',  strNumberAndClass[1], ', outputTopicName: ', topicOutName)
+    #print('Class: ',  int(strNumberAndClass[0]), ', ObjectType: ',  strNumberAndClass[1], ', outputTopicName: ', topicOutName)
     
     # Class: Names are used in dictonary
     pubOutputTopics[strNumberAndClass[1]] = rospy.Publisher(topicOutName, OccupancyGrid, queue_size=1)
@@ -110,7 +110,7 @@ def callback_bbReceived(markerArray):
             if validTransform == True:
                 # Get class type from namespace
                 strClassName = marker.ns.split('/')[-1]
-                
+                #print "marker.ns: ", marker.ns, "strClassName: ", strClassName, "xyz_conf.keys(): ", xyz_conf
                 # Append point to a dictionary-class.
                 xyz_conf[strClassName].append(np.array([pt.point.x,pt.point.y,marker.color.a]))
                 
@@ -147,6 +147,11 @@ def callback_bbReceived(markerArray):
 rospy.Subscriber(topicIn, MarkerArray, callback_bbReceived,queue_size=None)  
 # main
 def main():
+    print ''
+    print 'bb2ism (', nodeName, ') is subscriping to topic: ', topicIn
+    for className in pubOutputTopics.keys():
+        print 'bb2ism (', nodeName, ') is publishing: ', os.path.join(topicOutPrefix,className), "Class Number: ", pubOutputTopics[className]
+    
     
     rospy.spin()
 
