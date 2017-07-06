@@ -153,11 +153,13 @@ def image2ism(imgConfidence,imgClass):
             objectExtent = 0.5   
         else:
             objectExtent = 0.0
-            
+        
+        #objectExtent = 0.0
         #,ignoreRectangle,ignoreRectangleCoord
         #(Xvis, Yvis) = inversePerspectiveMapping(cv_image.shape[1], cv_image.shape[0], rHorizon, 0, 0, 1.5, 20*np.pi/180, 10*np.pi/180, 20*np.pi/180);
         #print objectType, objectExtent
         #tStart = time.time()
+        
         grid, nGridX, nGridY, dist_x1, dist_y1,empty = image2ogm(Xvis,Yvis,cv_image,rHorizon,grid_xSizeInM,grid_ySizeInM,grid_resolution,objectExtent,minLikelihood,maxLikelihood)
         #print "Elapsed on Image2ism: ", time.time()-tStart
         #image_message = bridge.cv2_to_imgmsg(grid, encoding="mono8")
@@ -178,7 +180,7 @@ def image2ism(imgConfidence,imgClass):
         grid_msg.info.origin = Pose(Point(origin_x, origin_y, origin_z),Quaternion(0, 0, 0, 1))
         grid_msg.data = grid.flatten()
         
-        print "np.min(grid)",np.min(grid),"np.max(grid)",np.max(grid)
+        #print "np.min(grid)",np.min(grid),"np.max(grid)",np.max(grid)
         # print "Sequence value", data.header.frame_id
         # HACK: LOADS THE OBJECT TYPE FROM THE FRAME ID:
         #pubImageObjs[0].publish(grid_msg)

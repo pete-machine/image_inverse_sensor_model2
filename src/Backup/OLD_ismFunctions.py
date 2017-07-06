@@ -1,4 +1,3 @@
-
 import time
 import sys
 import numpy as np
@@ -45,8 +44,7 @@ def inversePerspectiveMapping(width, height, x, y, z, pitch, yaw, alpha):
     # (if we were really on a planar road) seems to be about:
     #rHorizon = horizon;
     rHorizon = int(np.ceil( (m-1)/2*(1 - np.tan(pitch)/np.tan(alpha)) + 1 ));
-    rHorizon = rHorizon + int(m*0.01); # To be sure
-
+    rHorizon = rHorizon + int(height*0.05); # To avoid mapping points in and above the horison. The rhorizon is set to 5% below the actual horison. 
 
     h = z; # Height over feature
     transM = np.array([[1, 0, 0, x],[0, 1, 0, y],[0, 0, 1, 0],[0, 0, 0, 1]])
@@ -108,9 +106,8 @@ def inversePerspectiveMapping(width, height, x, y, z, pitch, yaw, alpha):
 #			pNonVisible: In non-visible areas (outside the camera field-of-view), the likelihood of an obstacle is typically 0.5.
 #			pMaxVisible: In detected areas, the likelihood of an obstacle is between 0.5 and the maximum likelihodd (e.g. 0.8). The input image in range [0;255] is mapped between 0.5 to 0.8(pMaxVisible). 
 
-
-
-def baseGrid(Xvis,Yvis,rHorizon,grid_xSizeInM,grid_ySizeInM,grid_resolution,pVisibleArea,pNonVisibleArea):
+def image2ogm(Xvis,Yvis,inputImage,rHorizon,grid_xSizeInM,grid_ySizeInM,grid_resolution,objectExtent):
+        
     mmX = np.array([Xvis.min(), Xvis.max()]); 
     mmY = np.array([Yvis.min(), Yvis.max()]); 
     diffX = np.diff(mmX);
@@ -129,7 +126,13 @@ def baseGrid(Xvis,Yvis,rHorizon,grid_xSizeInM,grid_ySizeInM,grid_resolution,pVis
         
     nGridX = int(gridSizeXIn/resolution);
     nGridY = int(gridSizeYIn/resolution);  
+    Icropped = inputImage[rHorizon-2:-1,:]
 
+#    try:
+    IcroppedTransformed = TransformImageAccordingToObjectExtend(Xvis,Yvis,Icropped,objectExtent)
+#    except: 
+#        print "ERROR: Save mage: shape: ", inputImage.shape 
+#        cv2.imwrite('/home/repete/CRAP/testImage' + str(time.time()-tStart) + '.png',Icropped)
     dist_x = mmX[0]
     dist_y = mmY[0]
     
@@ -138,8 +141,17 @@ def baseGrid(Xvis,Yvis,rHorizon,grid_xSizeInM,grid_ySizeInM,grid_resolution,pVis
     
     
     
+    
+    pNonVisibleAreaFloat = 0.5;
+    pNonVisibleArea = 255*pNonVisibleAreaFloat
+    pVisibleAreaFloat = 0.4; # Originally set to 0.4
+    pVisibleArea = 255*pVisibleAreaFloat
+    pMaxLikelihoodFloat = 0.8;
+    pMaxLikelihood = 255*pMaxLikelihoodFloat
+    factor = (pMaxLikelihoodFloat-pNonVisibleAreaFloat);
     # maxVisualDistance = 8; % in Meter
     # maxVisualGridDistance = (maxVisualDistance-mmX(1))/resolution;
+
     
     ## gridBase2 = zeros(nGridY,nGridX);    
     
@@ -151,63 +163,30 @@ def baseGrid(Xvis,Yvis,rHorizon,grid_xSizeInM,grid_ySizeInM,grid_resolution,pVis
     mask[rr,cc] = pVisibleArea-pNonVisibleArea
     gridBase = mask+gridBase;
     
-    return (gridBase,Xtrans,Ytrans,dist_x,dist_y)
-
-
-def bb2ogm(Xvis,Yvis,rHorizon,grid_xSizeInM,grid_ySizeInM,grid_resolution,objectExtent,minLikelihood,maxLikelihood):
     
-    pNonVisibleAreaFloat = 0.5;
-    pNonVisibleArea = 255*pNonVisibleAreaFloat
-    pVisibleAreaFloat = minLikelihood; # Originally set to 0.4
-    pVisibleArea = 255*pVisibleAreaFloat
-    pMaxLikelihoodFloat = maxLikelihood; # Originally set to 0.8
-    # pMaxLikelihood = 255*pMaxLikelihoodFloat
-    factor = (pMaxLikelihoodFloat-pNonVisibleAreaFloat);
     
-    (gridBase,Xtrans,Ytrans,dist_x,dist_y) = baseGrid(Xvis,Yvis,rHorizon,grid_xSizeInM,grid_ySizeInM,grid_resolution,pVisibleArea,pNonVisibleArea)
-    nGridY = gridBase.shape[0]
-    nGridX = gridBase.shape[1]
-    
-    grid = gridBase;
-    return (grid, nGridX, nGridY, dist_x, dist_y)
-
-def image2ogm(Xvis,Yvis,inputImage,rHorizon,grid_xSizeInM,grid_ySizeInM,grid_resolution,objectExtent,minLikelihood,maxLikelihood):
-        
-
-    pNonVisibleAreaFloat = 0.5;
-    pNonVisibleArea = 255*pNonVisibleAreaFloat
-    pVisibleAreaFloat = minLikelihood; # Originally set to 0.4
-    pVisibleArea = 255*pVisibleAreaFloat
-    pMaxLikelihoodFloat = maxLikelihood; # Originally set to 0.8
-    # pMaxLikelihood = 255*pMaxLikelihoodFloat
-    factor = (pMaxLikelihoodFloat-pNonVisibleAreaFloat);    
-    
-    (gridBase,Xtrans,Ytrans,dist_x,dist_y) = baseGrid(Xvis,Yvis,rHorizon,grid_xSizeInM,grid_ySizeInM,grid_resolution,pVisibleArea,pNonVisibleArea)
-
-    nGridY = gridBase.shape[0]
-    nGridX = gridBase.shape[1]
-
-    Icropped = inputImage[rHorizon-2:-1,:]
-    IcroppedTransformed = TransformImageAccordingToObjectExtend(Xvis,Yvis,Icropped,objectExtent)
     gridObstacle = np.zeros((nGridY,nGridX))
     
     
-    linIndex = np.squeeze(IcroppedTransformed>0.);
-    yindex = Ytrans[linIndex].astype(int)
-    xindex = Xtrans[linIndex].astype(int)
-    gridObstacle[yindex,xindex] = pNonVisibleArea+IcroppedTransformed[linIndex]*factor;
-    gridBase[yindex,xindex] = 0;
-    
-    # Negative values are set to 0.5. (This option is used ignore areas in the image). 
-    linIndex = np.squeeze(IcroppedTransformed<-1.);
-    if linIndex.size > 0:
-        yindex = Ytrans[linIndex].astype(int)
-        xindex = Xtrans[linIndex].astype(int)
-        gridObstacle[yindex,xindex] = pNonVisibleArea;
-        gridBase[yindex,xindex] = 0;
+    linIndex = np.squeeze(IcroppedTransformed>0);
 
-    grid = ((gridBase+gridObstacle)*100)/255
-    grid = np.uint8(grid)
+    
+    xyvalPos = np.column_stack((np.floor(Xtrans[linIndex]), np.floor(Ytrans[linIndex]), IcroppedTransformed[linIndex]))
+    
+    #for iIdx in range(0,xyvalPos.shape[0]-1):
+    #    gridObstacle[xyvalPos[iIdx,1],xyvalPos[iIdx,0]] = pNonVisibleArea+xyvalPos[iIdx,2]*factor;
+    #    gridBase[xyvalPos[iIdx,1],xyvalPos[iIdx,0]] = 0;
+    
+    
+
+    b = np.ascontiguousarray(xyvalPos).view(np.dtype((np.void, xyvalPos.dtype.itemsize * xyvalPos.shape[1])))
+    _, idxs = np.unique(b, return_index=True)
+    
+    for iIdx in idxs:
+        gridObstacle[int(xyvalPos[iIdx,1]),int(xyvalPos[iIdx,0])] = pNonVisibleArea+xyvalPos[iIdx,2]*factor;
+        gridBase[int(xyvalPos[iIdx,1]),int(xyvalPos[iIdx,0])] = 0;
+        
+    grid = np.uint8(((gridBase+gridObstacle)*100)/255);
     return (grid, nGridX, nGridY, dist_x, dist_y,IcroppedTransformed)
     
 def TransformImageAccordingToObjectExtend(Xvis,Yvis,inputImageCropped,objectExtent):
@@ -218,7 +197,6 @@ def TransformImageAccordingToObjectExtend(Xvis,Yvis,inputImageCropped,objectExte
     # The output image is only changed if the object extent is bigger than 0.
     if(objectExtent>0):
         newMap = np.zeros(inputImageCropped.shape)
-        newMap[inputImageCropped<0] = -10
         # 
         for iCol in range(0,inputImageCropped.shape[1]): #range(450,451):#
             #try:
@@ -227,8 +205,8 @@ def TransformImageAccordingToObjectExtend(Xvis,Yvis,inputImageCropped,objectExte
                 sectionCol = np.flipud(sectionTmp)
                 
                 if sectionCol.shape[0]>0:
-                    
                     # Returns the the pixel, when the first component (from the bottom) in the image stops or a gap appears.
+            
                     startPixel = np.squeeze(sectionCol[np.squeeze(np.where(np.diff(sectionCol)<-1))])
         
                     if startPixel.shape:
@@ -278,5 +256,4 @@ def TransformImageAccordingToObjectExtend(Xvis,Yvis,inputImageCropped,objectExte
 #imgplot1 = plt.matshow(anomaly)
 #imgplot2 = plt.matshow(IcroppedTransformed)
 #imgplot3 = plt.matshow(grid)
-
 

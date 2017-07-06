@@ -37,6 +37,9 @@ degradeOutlook = rospy.get_param(nodeName+'/degrade_outlook', True)
 degradeOutlookAfterM = rospy.get_param(nodeName+'/degrade_outlook_afterM', 10.0)
 pNonVisible = rospy.get_param(nodeName+'/p_non_visible', 0.5)
 
+# If nothing is defined. Bounding box probabilities are expected to be within 0 and 1
+expectedMinProb = rospy.get_param(nodeName+'/expected_min_prob', 0.0)
+expectedMaxProb = rospy.get_param(nodeName+'/expected_max_prob', 1.0)
 
 tfBuffer = tf2_ros.Buffer()
 listener = tf2_ros.TransformListener(tfBuffer)
@@ -46,13 +49,14 @@ configData = open(configFile,'r')
 configText = configData.read()
 strsClassNumberAndName = [line for idx,line in enumerate(str(configText).split('\n')) if line is not '' and idx is not 0]
 pubOutputTopics = {}
+classAndNumber = {}
 
 for strClass in strsClassNumberAndName:
     strNumberAndClass = strClass.split(' ')
     
     topicOutName = os.path.join(topicOutPrefix,strNumberAndClass[1])
     #print('Class: ',  int(strNumberAndClass[0]), ', ObjectType: ',  strNumberAndClass[1], ', outputTopicName: ', topicOutName)
-    
+    classAndNumber[strNumberAndClass[1]] = int(strNumberAndClass[0])
     # Class: Names are used in dictonary
     pubOutputTopics[strNumberAndClass[1]] = rospy.Publisher(topicOutName, OccupancyGrid, queue_size=1)
 
@@ -111,8 +115,11 @@ def callback_bbReceived(markerArray):
                 # Get class type from namespace
                 strClassName = marker.ns.split('/')[-1]
                 #print "marker.ns: ", marker.ns, "strClassName: ", strClassName, "xyz_conf.keys(): ", xyz_conf
+                
+                newProb = np.clip((marker.color.a-expectedMinProb)/(expectedMaxProb-expectedMinProb),0.0,1.0)
+                
                 # Append point to a dictionary-class.
-                xyz_conf[strClassName].append(np.array([pt.point.x,pt.point.y,marker.color.a]))
+                xyz_conf[strClassName].append(np.array([pt.point.x,pt.point.y,newProb]))
                 
             
 
@@ -150,7 +157,7 @@ def main():
     print ''
     print 'bb2ism (', nodeName, ') is subscriping to topic: ', topicIn
     for className in pubOutputTopics.keys():
-        print 'bb2ism (', nodeName, ') is publishing: ', os.path.join(topicOutPrefix,className), "Class Number: ", pubOutputTopics[className]
+        print 'bb2ism (', nodeName, ') is publishing: ', os.path.join(topicOutPrefix,className), "Class Number: ", classAndNumber[className]
     
     
     rospy.spin()

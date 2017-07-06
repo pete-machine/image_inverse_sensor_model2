@@ -17,16 +17,17 @@ import os
 #import transforms3d
 #import pymel.core.datatypes as dt
 
-max_distance = 30.0 # max distance
+max_distance = 20.0 # max distance
 hFOV =  np.pi*82.62/180 #np.pi/4 # Horisontal field of view. # 
-grid_resolution = 0.5
+grid_resolution = 0.1
 pVisible = 0.4
 pNonVisible = 0.5
 pMaxLikelyhood = 0.8
 degradeOutlook = True
 degradeOutlookAfterM = 10.0 # distance
-localizationErrorStd = np.array([.1, 0.8]) # 
-localizationErrorStdEnd = np.array([.4, 2.0]) # 
+#localizationErrorStd = np.array([.1, 0.8]) # 
+localizationErrorStd = np.array([.2, 0.8]) # 
+localizationErrorStdEnd = np.array([.5, 2.0]) # 
 
 
 import sys
@@ -60,9 +61,9 @@ bStd = np.expand_dims(localizationErrorStd,1)
 
 aStd*30.0+bStd
 # 
-xyz = [[4,1,1.0],[17,10,0.5],[12,-5,1.0],[31,8,1.0],[25,-21,0.5],[40.9702127, -0.44210202, 1.0]]
+#xyz = [[4,1,1.0],[17,10,0.5],[12,-5,1.0],[31,8,1.0],[25,-21,0.5],[40.9702127, -0.44210202, 1.0]]
 #xyz = []
-#xyz = np.array([[7,2],[16,12],[25,-10],[29,8]])
+xyz = np.array([[7,3.5,1.0],[17,-10.5,1.0]])
 
 t0 = time.time()
 
@@ -80,9 +81,15 @@ print('Time (Total): ', t2-t0)
 
 plt.figure()
 plt.imshow(detectionGrid)
-plt.axis('equal')
-plt.colorbar()
+#plt.axis('equal')
+cbar = plt.colorbar()
+cbar.ax.tick_params(labelsize=15) 
+plt.xticks([])
+plt.yticks([])
 plt.show()
+
+
+
 
 
 ## 
