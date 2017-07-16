@@ -80,47 +80,47 @@ imgConfidence = out['imgConfidence']
 
 
 
-#for each class
-for objectType in outputTopicsNumber.keys():
-    classNumber = outputTopicsNumber[objectType]
-    bwClass = imgClass==classNumber
-    imgConfidenceClass = np.zeros_like(imgConfidence)
-    imgConfidenceClass[bwClass] = imgConfidence[bwClass]
-    
-    cv_image = cv2.resize(imgConfidenceClass,(imageWidth, imageHeight)).astype(np.int)
-    
-    if ignoreRectangle:
-        setIndices = (np.array([cv_image.shape[0],cv_image.shape[0],cv_image.shape[1],cv_image.shape[1]])*np.array(ignoreRectangleCoord)).astype(int)
-        cv_image[setIndices[0]:setIndices[1],setIndices[2]:setIndices[3]] = -10
-
-    if objectType == 'human':
-        objectExtent = 0.4
-    elif objectType == 'other':
-        objectExtent = 0.5
-    elif objectType == 'unknown':
-        objectExtent = 0.5
-    elif objectType == 'vehicle':
-        objectExtent = 1.5
-    elif objectType == 'water':
-        objectExtent = 0.0
-    elif objectType == 'grass':
-        objectExtent = 0.0
-    elif objectType == 'ground':
-        objectExtent = 0.0
-    elif objectType == 'shelterbelt':
-        objectExtent = 0.0
-    elif objectType == 'anomaly':
-        objectExtent = 0.5
-    elif objectType == 'heat':
-        objectExtent = 0.5   
-    else:
-        objectExtent = 0.0
-
-    grid, nGridX, nGridY, dist_x1, dist_y1,empty = image2ogm(Xvis,Yvis,cv_image,rHorizon,grid_xSizeInM,grid_ySizeInM,grid_resolution,objectExtent,minLikelihood,maxLikelihood)
-    plt.figure()
-    plt.imshow(imgRaw)
-    plt.plot([0,imgRaw.shape[1]],[rHorizon,rHorizon])
-    
-    plt.figure()
-    plt.imshow(grid)
-    plt.axis('equal')
+##for each class
+#for objectType in outputTopicsNumber.keys():
+#    classNumber = outputTopicsNumber[objectType]
+#    bwClass = imgClass==classNumber
+#    imgConfidenceClass = np.zeros_like(imgConfidence)
+#    imgConfidenceClass[bwClass] = imgConfidence[bwClass]
+#    
+#    cv_image = cv2.resize(imgConfidenceClass,(imageWidth, imageHeight)).astype(np.int)
+#    
+#    if ignoreRectangle:
+#        setIndices = (np.array([cv_image.shape[0],cv_image.shape[0],cv_image.shape[1],cv_image.shape[1]])*np.array(ignoreRectangleCoord)).astype(int)
+#        cv_image[setIndices[0]:setIndices[1],setIndices[2]:setIndices[3]] = -10
+#
+#    if objectType == 'human':
+#        objectExtent = 0.4
+#    elif objectType == 'other':
+#        objectExtent = 0.5
+#    elif objectType == 'unknown':
+#        objectExtent = 0.5
+#    elif objectType == 'vehicle':
+#        objectExtent = 1.5
+#    elif objectType == 'water':
+#        objectExtent = 0.0
+#    elif objectType == 'grass':
+#        objectExtent = 0.0
+#    elif objectType == 'ground':
+#        objectExtent = 0.0
+#    elif objectType == 'shelterbelt':
+#        objectExtent = 0.0
+#    elif objectType == 'anomaly':
+#        objectExtent = 0.5
+#    elif objectType == 'heat':
+#        objectExtent = 0.5   
+#    else:
+#        objectExtent = 0.0
+#
+#    grid, nGridX, nGridY, dist_x1, dist_y1,empty = image2ogm(Xvis,Yvis,cv_image,rHorizon,grid_xSizeInM,grid_ySizeInM,grid_resolution,objectExtent,minLikelihood,maxLikelihood)
+#    plt.figure()
+#    plt.imshow(imgRaw)
+#    plt.plot([0,imgRaw.shape[1]],[rHorizon,rHorizon])
+#    
+#    plt.figure()
+#    plt.imshow(grid)
+#    plt.axis('equal')
