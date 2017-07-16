@@ -43,9 +43,13 @@ def inversePerspectiveMapping(width, height, x, y, z, pitch, yaw, alpha):
 
     # The row where the horizon would appear if it weren't for the mountains
     # (if we were really on a planar road) seems to be about:
-    #rHorizon = horizon;
     rHorizon = int(np.ceil( (m-1)/2*(1 - np.tan(pitch)/np.tan(alpha)) + 1 ));
     rHorizon = rHorizon + int(m*0.01); # To be sure
+    
+#    cutBelowHorizon = 10*np.pi/180 # 10 degrees
+#    rHorizon =  int(np.ceil( m/2*(1 - np.tan(pitch-cutBelowHorizon)/np.tan(alpha))));
+#    rHorizonTrue = int(np.ceil( m/2*(1 - np.tan(pitch)/np.tan(alpha))));
+    
 
 
     h = z; # Height over feature

@@ -28,14 +28,14 @@ imageHeight = 217 # rospy.get_param(nodeName+'/imageHeight', 600)
 cam_xTranslation = 0.0#rospy.get_param(nodeName+'/cam_xTranslation', 0) 
 cam_yTranslation = 0.0#rospy.get_param(nodeName+'/cam_yTranslation', 0) 
 cam_zTranslation = 2.056#rospy.get_param(nodeName+'/cam_zTranslation', 1.5)
-cam_pitch = 0.1963#rospy.get_param(nodeName+'/cam_pitch', 0.349)  #20*np.pi/180
+cam_pitch = 0.3839#rospy.get_param(nodeName+'/cam_pitch', 0.349)  #20*np.pi/180
 #cam_pitch = np.pi/5 # 
 cam_yaw = 0.0 #rospy.get_param(nodeName+'/cam_yaw', 0.1745) # 10*pi/180
 cam_rool = 0.0 
 cam_FOV = 0.7835#rospy.get_param(nodeName+'/cam_FOV', 0.349) # 20*pi/180
 
 # Grid settings
-grid_resolution = 0.1 #rospy.get_param(nodeName+'/grid_resolution', 0.05) # 10*pi/180
+grid_resolution = 0.5 #rospy.get_param(nodeName+'/grid_resolution', 0.05) # 10*pi/180
 grid_xSizeInM = -1.0 # rospy.get_param(nodeName+'/grid_xSizeInM', -1.0) # For values <0 length of X is scaled automatically
 grid_ySizeInM = -1.0 # rospy.get_param(nodeName+'/grid_ySizeInM', -1.0) # For values <0 length of Y is scaled automatically    
 minLikelihood = 0.4 # rospy.get_param(nodeName+'/min_likelihood', 0.4) 
