@@ -17,7 +17,8 @@ useMultiChannel = 2
 dirTestImage = '/home/pistol/DataFolder/stereo0.png'
 
 
-
+minLikelihood = 0.4 # rospy.get_param(nodeName+'/min_likelihood', 0.4) 
+maxLikelihood = 0.8 # rospy.get_param(nodeName+'/max_likelihood', 0.8)
 
 if useMultiChannel == 0:
     imgIn = cv2.cvtColor(cv2.imread(dirTestImage),cv2.COLOR_BGR2RGB)
@@ -148,6 +149,13 @@ ipm.update_extrinsic(radPitch,radYaw,radRoll,pCamera)
 # Update homography
 pRayStarts,pDst,rHorizon, rHorizonTrue = ipm.update_homography(imDim)
 
+
+imgIn = imgIn.astype(np.float32)
+mask = imgIn>0
+imgIn[mask] = imgIn[mask]*(maxLikelihood-minLikelihood)/255.0+minLikelihood
+imgIn[mask==False] = 0.5
+imgIn = (imgIn*100).astype(np.uint8)
+
 # Create wrapped image. 
 warped = ipm.makePerspectiveMapping(imgIn)
 
@@ -164,8 +172,8 @@ print 'run time: ', (time.time()-t1)*1000,  'ms'
 if rHorizonTrue > 0:
     pHorizon = (imDim[0]*rHorizon).astype(np.int)
     pHorizonTrue = (imDim[0]*rHorizonTrue).astype(np.int)
-    cv2.line(imgIn,(0, pHorizon),(imDim[1],pHorizon),(255,255,255),3)
-    cv2.line(imgIn,(0, pHorizonTrue),(imDim[1],pHorizonTrue),(255,255,255),3)
+#    cv2.line(imgIn,(0, pHorizon),(imDim[1],pHorizon),(255,255,255),3)
+#    cv2.line(imgIn,(0, pHorizonTrue),(imDim[1],pHorizonTrue),(255,255,255),3)
     
 
 #plt.figure()
@@ -174,6 +182,7 @@ plt.figure()
 plt.imshow(imgIn)
 plt.figure()
 plt.imshow(warped)
+plt.colorbar()
 
 
 fig = plt.figure()
