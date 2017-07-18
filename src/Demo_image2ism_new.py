@@ -14,7 +14,7 @@ import time
 from image2ism_new import InversePerspectiveMapping
 
 
-useMultiChannel = 0
+useMultiChannel = 2
 dirTestImage = '/home/pistol/DataFolder/stereo0.png'
 
 
@@ -22,7 +22,10 @@ minLikelihood = 0.4 # rospy.get_param(nodeName+'/min_likelihood', 0.4)
 maxLikelihood = 0.8 # rospy.get_param(nodeName+'/max_likelihood', 0.8)
 
 if useMultiChannel == 0:
+    resize = 0.5
     imgIn = cv2.cvtColor(cv2.imread(dirTestImage),cv2.COLOR_BGR2RGB)
+    imgIn = cv2.resize(imgIn,None,fx=resize,fy=resize,interpolation=cv2.INTER_LINEAR)
+    
 elif useMultiChannel == 1:
     imgIn = cv2.cvtColor(cv2.imread(dirTestImage),cv2.COLOR_BGR2GRAY)
 elif useMultiChannel == 2:
@@ -86,7 +89,7 @@ ppo = np.array([512.292836648199,251.580929633186])
 
 
 #radFOV = 2*np.arctan2(np.array(imDimOrg),2*fl)
-print radFOV
+#print radFOV
 # Axis skew
 s = 0.0
 
@@ -140,7 +143,7 @@ radRoll = degRoll*np.pi/180
 #M,pDstSize = update_homography(T_extrinsic, pCamera, imDimOrg,imDim, Kinv,resolution,rHorizon)
 
 
-ipm = InversePerspectiveMapping(resolution,degCutBelowHorizon)
+ipm = InversePerspectiveMapping(resolution,degCutBelowHorizon,minLikelihood,maxLikelihood)
 
 # Update intrinsic based on focal length, principal point offset, original image resolution and optionally skew.
 # (Consider making a function to update based on K)
@@ -155,14 +158,10 @@ ipm.update_extrinsic(radPitch,radYaw,radRoll,pCamera)
 pRayStarts,pDst,rHorizon, rHorizonTrue,pSrc,pDstOut = ipm.update_homography(imDimIn)
 
 
-#imgIn = imgIn.astype(np.float32)
-#mask = imgIn>0
-#imgIn[mask] = imgIn[mask]*(maxLikelihood-minLikelihood)/255.0+minLikelihood
-#imgIn[mask==False] = 0.5
-#imgIn = (imgIn*100).astype(np.uint8)
+
 
 # Create wrapped image. 
-warped = ipm.makePerspectiveMapping(imgIn)
+warped = ipm.makePerspectiveMapping(imgIn,match2Grid=True)
 
 
 #t1 = time.time()
@@ -209,7 +208,6 @@ plt.colorbar()
 
 
 fig = plt.figure()
-
 ax = fig.add_subplot(111, projection='3d')
 n = 100
 

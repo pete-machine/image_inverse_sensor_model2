@@ -13,17 +13,18 @@ import matplotlib.image as mpimg
 #rHorizon = 0
 class InversePerspectiveMapping:
     
-    def __init__(self,resolution=0.1,degCutBelowHorizon=10.0):
+    def __init__(self,resolution=0.1,degCutBelowHorizon=10.0,minLikelihood=0.4,maxLikelihood=0.8):
         self.isIntrinsicUpdated = False
         self.isExtrinsicUpdated = False
         self.isHomographyUpdated = False
+        self.minLikelihood = minLikelihood
+        self.maxLikelihood = maxLikelihood
         self.resolution = resolution
         self.degCutBelowHorizon = degCutBelowHorizon
         
-    def update_homography(self,imDim):
-        print "H5_0"
+    def update_homography(self,imDim_in):
+        self.imDim_in = imDim_in
         if self.isIntrinsicUpdated and self.isExtrinsicUpdated:
-            print  "H5_1"
             rHorizon, rHorizonTrue = self.determineHorizon(degCutBelowHorizon=self.degCutBelowHorizon)
                 
             # Image corners in matrix. 
@@ -42,7 +43,7 @@ class InversePerspectiveMapping:
             pRayEnds = np.matmul(self.T_extrinsic,camCorners)
             pRayEnds = np.delete(pRayEnds,3, axis=0).transpose()
             
-            print  "H5_2"
+
             # Interspection between ground plane (defined by normal and point) and the four image corner rays  defined by two points (camera position and image corner positions). 
             # Define plane by point and normal vector.
             pPlane = np.array([0,0,0],dtype=np.double)
@@ -52,19 +53,17 @@ class InversePerspectiveMapping:
             # Intersection with ground plane in pDst. 
             pDst,fac,val = self.intersection_line_plane(pRayStarts,pRayEnds,pPlane,nPlane)
             
-            print  "H5_3"
             # Finally the image needs to be wrapped into a new image. 
             pDstOut = pDst/self.resolution
             pDstOut = pDstOut-np.min(pDstOut,axis=0)
             self.pDstSize = np.max(pDstOut,axis=0).astype(np.int)
-            
+            self.pDst = pDst
             #rHorizon, rHorizonTrue = determineHorizon(imDim,radFOV,radPitch,degCutBelowHorizon=10)
-            pSrc = np.array([[0,0],[0,imDim[0]-imDim[0]*rHorizon],[imDim[1],imDim[0]-imDim[0]*rHorizon],[imDim[1],0]])
+            pSrc = np.array([[0,0],[0,self.imDim_in[0]-self.imDim_in[0]*rHorizon],[self.imDim_in[1],self.imDim_in[0]-self.imDim_in[0]*rHorizon],[self.imDim_in[1],0]])
             # The homography that maps image points to ground plane is determined. 
             self.M = cv2.getPerspectiveTransform(pSrc[:,:2].astype(np.float32),pDstOut[:,:2].astype(np.float32))   
             
             self.isHomographyUpdated = True
-            print  "H5_4"
             return pRayEnds,pDst,rHorizon, rHorizonTrue,pSrc,pDstOut
         else:
             raise NameError('update_homography requires both InversePerspectiveMapping.update_intrinsic() and InversePerspectiveMapping.update_extrinsic() functions to be executed. ')
@@ -165,14 +164,27 @@ class InversePerspectiveMapping:
         
         return T
     
-    def makePerspectiveMapping(self,imgIn):
-        print  "H8_4"
+    def convert2grid(self,imgIn,minLikelihood,maxLikelihood):
+         # Expect 0-255 and convert to grid format that ranges between 0-100...
+         # However, 0 mappes to minLikelihood(0.4), 0> to 255 mappes between minLikelihood(0.5) to maxLikelihood (0.8)
+        imgIn = imgIn.astype(np.float32)
+        mask = imgIn>0
+        imgIn[mask] = imgIn[mask]*(maxLikelihood-0.5)/255.0+0.5
+        imgIn[mask==False] = minLikelihood
+        imgIn = (imgIn*100).astype(np.uint8)        
+        return imgIn
+        
+    def makePerspectiveMapping(self,imgIn,match2Grid = False ):
+
         if self.isHomographyUpdated: 
-            ### Make warping ########
-#            print "M: ", self.M
-#            print "imgIn: ", imgIn.shape
-#            print "pDstSize: ", self.pDstSize
-            return cv2.warpPerspective(np.flipud(imgIn), self.M,(self.pDstSize[0],self.pDstSize[1]) , flags=cv2.INTER_LINEAR)
+            
+            if match2Grid: 
+                imgIn = self.convert2grid(imgIn,self.minLikelihood,self.maxLikelihood)
+                borderValue=50
+            else:
+                borderValue=0
+                
+            return cv2.warpPerspective(np.flipud(imgIn), self.M,(self.pDstSize[0],self.pDstSize[1]) , flags=cv2.INTER_NEAREST,borderValue=borderValue)
         else:
             raise NameError('makePerspectiveMapping requires the InversePerspectiveMapping.update_homography-function to be executed')
     def __repr__(self):
@@ -190,6 +202,7 @@ class InversePerspectiveMapping:
         
         if self.isIntrinsicUpdated: 
             outStr = outStr + "Intrinsic: \n"
+            outStr = outStr + "    Original Image size " + str(self.imDimOrg)  + "\n"
             outStr = outStr + "    FOV_ver/hor (Radians) " + str(self.radFOV)  + "\n"
             outStr = outStr + "    FOV_ver/hor (Degrees) " + str(self.radFOV*180/np.pi) + "\n"
             outStr = outStr + "    K: " + str(self.K).replace('\n','\n       ') + "\n"
@@ -197,9 +210,13 @@ class InversePerspectiveMapping:
         if self.isExtrinsicUpdated:
             outStr = outStr + "Extrinsic: \n    Pitch (radian): " + str(self.radPitch) + " \n    Yaw (radian): " + str(self.radYaw) + " \n    Roll (radian): " + str(self.radRoll) + "\n"
             outStr = outStr + "    Camera Position (m): " + str(self.pCamera) + "\n"
+            outStr = outStr + "    T: " + str(self.T_extrinsic).replace('\n','\n       ') + "\n"
+            
          
         if self.isHomographyUpdated:
             outStr = outStr + "Homography:\n    M: " + str(self.M).replace('\n','\n       ') + "\n"
+            outStr = outStr + "    Orig. Image size " + str(self.imDimOrg)  + "\n"
+            outStr = outStr + "    Input image size " + str(np.array(self.imDim_in))  + "\n"
         
         outStr = outStr + "################################################ \n"
         return outStr
