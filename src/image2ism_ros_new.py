@@ -51,6 +51,7 @@ maxLikelihood = rospy.get_param(nodeName+'/max_likelihood', 0.8)
 ignoreRectangle = rospy.get_param(nodeName+'/ignore_rectangle', False)
 strIgnoreRectangleCoordinates = rospy.get_param(nodeName+'/ignore_rectangle_coordinates', "0.0 1.0 0.0 0.222") # normalized coordinates (rowMin, rowMax, colMin, colMax).
 
+print "H0"
 #############################################################
 ## Intrinsic Camera settings
 # Focal length fx,fy
@@ -74,15 +75,12 @@ imDimIn = [imageHeight,imageWidth] # The input dimensions
 pCamera = [0,0,cam_zTranslation]
 degCutBelowHorizon = 7.5
 
-ipm = InversePerspectiveMapping(grid_resolution,degCutBelowHorizon)
-ipm.update_intrinsic(fl,ppo,imDimOrg)
-ipm.update_extrinsic(cam_pitch,cam_pitch,cam_roll,pCamera)
-pRayStarts,pDst,rHorizon, rHorizonTrue,pSrc,pDstOut = ipm.update_homography(imDimIn)
+
 
 #points = np.vstack((pCamera,pRayStarts,pDst))
 #############################################################
 
-
+print "H1"
 
 
 #ignoreRectangleCoord = [float(strPartCoord) for strPartCoord in strIgnoreRectangleCoordinates.split(' ')] 
@@ -104,13 +102,14 @@ for strClass in strsClassNumberAndName:
     pubOutputTopics[strNumberAndClass[1]] = rospy.Publisher(topicOutName, OccupancyGrid, queue_size=1)
     
 
-    
+print "H2"
 bridge = CvBridge()
 
 
 
 vectorLength = 6
 def callbackDetectionImageReceived(data):
+    print "H3"
     imgConfidence = bridge.imgmsg_to_cv2(data.imgConfidence, desired_encoding="passthrough")
     imgClass = bridge.imgmsg_to_cv2(data.imgClass, desired_encoding="passthrough")
     crop = data.crop
@@ -122,6 +121,7 @@ def callbackDetectionImageReceived(data):
     
     
 def callbackDetectionImageReceivedSingleClass(data):
+    print "H4"
     imgConfidence = bridge.imgmsg_to_cv2(data, desired_encoding="passthrough")
     classNumber = outputTopicsNumber[outputTopicsNumber.keys()[0]]
     imgClass = classNumber*np.ones(imgConfidence.shape)
@@ -132,10 +132,14 @@ def callbackDetectionImageReceivedSingleClass(data):
     
     
 def image2ism(imgConfidence,imgClass):
-    
-    
+    print "H5"
+    ipm = InversePerspectiveMapping(grid_resolution,degCutBelowHorizon)
+    ipm.update_intrinsic(fl,ppo,imDimOrg)
+    ipm.update_extrinsic(cam_pitch,cam_pitch,cam_roll,pCamera)
+    pRayStarts,pDst,rHorizon, rHorizonTrue,pSrc,pDstOut = ipm.update_homography(imDimIn)
     #for each class
     for objectType in pubOutputTopics.keys():
+        print "H6"
         classNumber = outputTopicsNumber[objectType]
         bwClass = imgClass==classNumber
         imgConfidenceClass = np.zeros_like(imgConfidence)
@@ -144,11 +148,12 @@ def image2ism(imgConfidence,imgClass):
 #        print "np.unique(imgConfidenceClass)",np.unique(imgClass),"imgClass.shape",imgClass.shape, "classNumber: ", classNumber
 #        print "np.min(imgConfidenceClass)",np.min(imgConfidenceClass),"np.max(imgConfidenceClass)",np.max(imgConfidenceClass)
         
+        print "H7"
         cv_image = cv2.resize(imgConfidenceClass,(imageWidth, imageHeight)).astype(np.int)
-        
+        print "H8, shape: " , cv_image.shape
         
         grid = ipm.makePerspectiveMapping(cv_image)
-        
+        print "H9"
         # Convert to grid format (0-100)
         grid = grid.astype(np.float32)
         mask = grid>0
@@ -156,6 +161,7 @@ def image2ism(imgConfidence,imgClass):
         grid[mask==False] = 0.5
         grid = (grid*100).astype(np.uint8)
 
+        print "H10"
         grid_msg = OccupancyGrid()
         grid_msg.header.stamp = rospy.Time.now()
         grid_msg.header.frame_id = targetFrameId
@@ -177,6 +183,7 @@ def image2ism(imgConfidence,imgClass):
         #pubImageObjs[0].publish(grid_msg)
         
         pubOutputTopics[objectType].publish(grid_msg)
+        print "H11"
         #pubImageObjsDictionary[data.header.frame_id].publish(grid_msg)
     
 #vectorLength = 6

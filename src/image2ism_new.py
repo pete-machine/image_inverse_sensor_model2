@@ -21,8 +21,9 @@ class InversePerspectiveMapping:
         self.degCutBelowHorizon = degCutBelowHorizon
         
     def update_homography(self,imDim):
-        
+        print "H5_0"
         if self.isIntrinsicUpdated and self.isExtrinsicUpdated:
+            print  "H5_1"
             rHorizon, rHorizonTrue = self.determineHorizon(degCutBelowHorizon=self.degCutBelowHorizon)
                 
             # Image corners in matrix. 
@@ -41,7 +42,7 @@ class InversePerspectiveMapping:
             pRayEnds = np.matmul(self.T_extrinsic,camCorners)
             pRayEnds = np.delete(pRayEnds,3, axis=0).transpose()
             
-            
+            print  "H5_2"
             # Interspection between ground plane (defined by normal and point) and the four image corner rays  defined by two points (camera position and image corner positions). 
             # Define plane by point and normal vector.
             pPlane = np.array([0,0,0],dtype=np.double)
@@ -51,7 +52,7 @@ class InversePerspectiveMapping:
             # Intersection with ground plane in pDst. 
             pDst,fac,val = self.intersection_line_plane(pRayStarts,pRayEnds,pPlane,nPlane)
             
-            
+            print  "H5_3"
             # Finally the image needs to be wrapped into a new image. 
             pDstOut = pDst/self.resolution
             pDstOut = pDstOut-np.min(pDstOut,axis=0)
@@ -63,7 +64,7 @@ class InversePerspectiveMapping:
             self.M = cv2.getPerspectiveTransform(pSrc[:,:2].astype(np.float32),pDstOut[:,:2].astype(np.float32))   
             
             self.isHomographyUpdated = True
-            
+            print  "H5_4"
             return pRayEnds,pDst,rHorizon, rHorizonTrue,pSrc,pDstOut
         else:
             raise NameError('update_homography requires both InversePerspectiveMapping.update_intrinsic() and InversePerspectiveMapping.update_extrinsic() functions to be executed. ')
@@ -127,9 +128,13 @@ class InversePerspectiveMapping:
         K[0:2,2] = principal_point_offset;
         K[0,1] = skew
         #K = np.array([[fl[0], s, ppo[0]],[0,fl[1],ppo[1]],[0,0,1]])
+        self.K = K
         self.Kinv = np.linalg.inv(K)
+        # 2*atan2(imageSize./2,focalLength);
+#        self.radFOV = 2*np.arctan(imDimOrg/2,focal_length)
+
+        self.radFOV = 2*np.arctan2(np.array(imDimOrg),2*focal_length)
         self.isIntrinsicUpdated = True
-        self.radFOV = 2*np.arctan(imDimOrg/(2*principal_point_offset))
         
         
     # Angling of camera: pitch, yaw, roll of
@@ -146,7 +151,11 @@ class InversePerspectiveMapping:
         T_yaw = np.array([[np.cos(yaw), -np.sin(yaw),0,0],[np.sin(yaw),np.cos(yaw),0,0],[0,0,1,0],[0,0,0,1]])
         T_roll = np.array([[1,0,0,0],[0,np.cos(roll),-np.sin(roll),0],[0,np.sin(roll),np.cos(roll),0],[0,0,0,1]])
     
+        
         self.radPitch = pitch
+        self.radYaw = yaw
+        self.radRoll = roll
+        
         T = np.matmul(T_roll,np.matmul(T_pitch,T_yaw))
         T[0:3,3] = pCamera 
         
@@ -157,8 +166,40 @@ class InversePerspectiveMapping:
         return T
     
     def makePerspectiveMapping(self,imgIn):
+        print  "H8_4"
         if self.isHomographyUpdated: 
             ### Make warping ########
+#            print "M: ", self.M
+#            print "imgIn: ", imgIn.shape
+#            print "pDstSize: ", self.pDstSize
             return cv2.warpPerspective(np.flipud(imgIn), self.M,(self.pDstSize[0],self.pDstSize[1]) , flags=cv2.INTER_LINEAR)
         else:
             raise NameError('makePerspectiveMapping requires the InversePerspectiveMapping.update_homography-function to be executed')
+    def __repr__(self):
+        return "InversePerspectiveMapping()"
+    
+    def strYes(self, boolTrue): 
+        if boolTrue:
+            return "(Yes)"
+        else:
+            return "(No)"
+    def __str__(self):
+        outStr = "\n######## INVERSE PERSPECTIVE MAPPING ###########\n"
+        outStr = outStr + "Resolution: " + str(self.resolution) + ", Cut horizon by: " + str(self.degCutBelowHorizon) + "degrees \n"
+        outStr = outStr + "Updated: Intrisic " +  self.strYes(self.isIntrinsicUpdated) + " Extrinsic " + self.strYes(self.isExtrinsicUpdated) + " Homography " + self.strYes(self.isHomographyUpdated) + "\n"
+        
+        if self.isIntrinsicUpdated: 
+            outStr = outStr + "Intrinsic: \n"
+            outStr = outStr + "    FOV_ver/hor (Radians) " + str(self.radFOV)  + "\n"
+            outStr = outStr + "    FOV_ver/hor (Degrees) " + str(self.radFOV*180/np.pi) + "\n"
+            outStr = outStr + "    K: " + str(self.K).replace('\n','\n       ') + "\n"
+            
+        if self.isExtrinsicUpdated:
+            outStr = outStr + "Extrinsic: \n    Pitch (radian): " + str(self.radPitch) + " \n    Yaw (radian): " + str(self.radYaw) + " \n    Roll (radian): " + str(self.radRoll) + "\n"
+            outStr = outStr + "    Camera Position (m): " + str(self.pCamera) + "\n"
+         
+        if self.isHomographyUpdated:
+            outStr = outStr + "Homography:\n    M: " + str(self.M).replace('\n','\n       ') + "\n"
+        
+        outStr = outStr + "################################################ \n"
+        return outStr

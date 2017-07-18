@@ -13,6 +13,7 @@ import time
 #from image2ism_new import extrinsicTransform, determineHorizon,intersection_line_plane,update_homography
 from image2ism_new import InversePerspectiveMapping
 
+
 useMultiChannel = 0
 dirTestImage = '/home/pistol/DataFolder/stereo0.png'
 
@@ -73,7 +74,7 @@ degYaw = 0
 degRoll = 0
 
 # Camera position 
-camHeight = 2.0;
+camHeight = 2.056;
 pCamera = np.array([0,0,camHeight])
 
 ## Intrinsic Camera settings
@@ -83,6 +84,9 @@ fl = np.array([582.5641679547480,581.4956911617406])
 # Principal point offset x0,y0
 ppo = np.array([512.292836648199,251.580929633186])
 
+
+#radFOV = 2*np.arctan2(np.array(imDimOrg),2*fl)
+print radFOV
 # Axis skew
 s = 0.0
 
@@ -95,7 +99,7 @@ imDimOrg = [544,1024]
 resolution = 0.1
 
 
-imDim = imgIn.shape[0:2]
+imDimIn = imgIn.shape[0:2]
 # Detemine if the image is [nRows,nCols] or [nRows,nCols,nChannels]
 if len(imgIn.shape) == 2:    
     multiChannel = False
@@ -146,8 +150,9 @@ t1 = time.time()
 # (Consider making a function to updated based on a single transformation)
 ipm.update_extrinsic(radPitch,radYaw,radRoll,pCamera)
 
+
 # Update homography
-pRayStarts,pDst,rHorizon, rHorizonTrue,pSrc,pDstOut = ipm.update_homography(imDim)
+pRayStarts,pDst,rHorizon, rHorizonTrue,pSrc,pDstOut = ipm.update_homography(imDimIn)
 
 
 #imgIn = imgIn.astype(np.float32)
@@ -162,12 +167,12 @@ warped = ipm.makePerspectiveMapping(imgIn)
 
 #t1 = time.time()
 #
-pSrcTmp = np.hstack((pSrc,np.ones((4,1)))).transpose()
-print pSrcTmp
-outTmp = np.matmul(np.linalg.inv(ipm.M),pSrcTmp)
-print outTmp
-print pDstOut.transpose()
-
+#pSrcTmp = np.hstack((pSrc,np.ones((4,1)))).transpose()
+#print pSrcTmp
+#outTmp = np.matmul(np.linalg.inv(ipm.M),pSrcTmp)
+#print outTmp
+#print pDstOut.transpose()
+#
 #imDimNew = (np.array(imDim)-np.array(imDim)*rHorizon).astype(np.uint)
 #xx, yy = np.meshgrid(range(0,imDimNew[1],10),range(0,imDimNew[0],10))
 #xyz = np.stack((xx,yy,np.ones_like(xx)),axis=2)
@@ -188,10 +193,10 @@ print 'run time (create mapping) : ', (t2-t1)*1000,  'ms'
 
 # Draw horizon to image
 if rHorizonTrue > 0:
-    pHorizon = (imDim[0]*rHorizon).astype(np.int)
-    pHorizonTrue = (imDim[0]*rHorizonTrue).astype(np.int)
-#    cv2.line(imgIn,(0, pHorizon),(imDim[1],pHorizon),(255,255,255),3)
-#    cv2.line(imgIn,(0, pHorizonTrue),(imDim[1],pHorizonTrue),(255,255,255),3)
+    pHorizon = (imDimIn[0]*rHorizon).astype(np.int)
+    pHorizonTrue = (imDimIn[0]*rHorizonTrue).astype(np.int)
+    cv2.line(imgIn,(0, pHorizon),(imDimIn[1],pHorizon),(255,255,255),3)
+    cv2.line(imgIn,(0, pHorizonTrue),(imDimIn[1],pHorizonTrue),(255,255,255),3)
     
 
 #plt.figure()
@@ -231,3 +236,5 @@ ax.set_ylim(mid_y - max_range, mid_y + max_range)
 #ax.set_zlim(mid_z - max_range, mid_z + max_range)
 ax.set_zlim(0, mid_z + max_range)
 plt.show()
+
+print ipm.__str__()
