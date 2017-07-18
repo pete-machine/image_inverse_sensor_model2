@@ -13,7 +13,7 @@ import time
 #from image2ism_new import extrinsicTransform, determineHorizon,intersection_line_plane,update_homography
 from image2ism_new import InversePerspectiveMapping
 
-useMultiChannel = 2
+useMultiChannel = 0
 dirTestImage = '/home/pistol/DataFolder/stereo0.png'
 
 
@@ -61,7 +61,7 @@ elif useMultiChannel == 2:
         
         
         
-t1 = time.time()
+t0 = time.time()
 
 
 
@@ -103,21 +103,21 @@ else:
     multiChannel = True
 
 
-### INIT #############
-# DETERMINE K 
-# Camera intrinsic matrix is determined. 
-K = np.eye(3)
-K[[0,1],[0,1]] = fl; 
-K[0:2,2] = ppo;
-K[0,1] = s
-#K1 = np.array([[fl[0], s, ppo[0]],[0,fl[1],ppo[1]],[0,0,1]])
-Kinv = np.linalg.inv(K)
-
-
-# Determine field-of-view from focal length and image dimensions.
-#radFOV = 2*np.arctan(imDimOrg/(2*fl))
-
-######################
+#### INIT #############
+## DETERMINE K 
+## Camera intrinsic matrix is determined. 
+#K = np.eye(3)
+#K[[0,1],[0,1]] = fl; 
+#K[0:2,2] = ppo;
+#K[0,1] = s
+##K1 = np.array([[fl[0], s, ppo[0]],[0,fl[1],ppo[1]],[0,0,1]])
+#Kinv = np.linalg.inv(K)
+#
+#
+## Determine field-of-view from focal length and image dimensions.
+##radFOV = 2*np.arctan(imDimOrg/(2*fl))
+#
+#######################
 
  # Convert to radians
 radPitch = degPitch*np.pi/180
@@ -141,29 +141,47 @@ ipm = InversePerspectiveMapping(resolution,degCutBelowHorizon)
 # Update intrinsic based on focal length, principal point offset, original image resolution and optionally skew.
 # (Consider making a function to update based on K)
 ipm.update_intrinsic(fl,ppo,imDimOrg)
-
+t1 = time.time()
 # Update extrinsic 
 # (Consider making a function to updated based on a single transformation)
 ipm.update_extrinsic(radPitch,radYaw,radRoll,pCamera)
 
 # Update homography
-pRayStarts,pDst,rHorizon, rHorizonTrue = ipm.update_homography(imDim)
+pRayStarts,pDst,rHorizon, rHorizonTrue,pSrc,pDstOut = ipm.update_homography(imDim)
 
 
-imgIn = imgIn.astype(np.float32)
-mask = imgIn>0
-imgIn[mask] = imgIn[mask]*(maxLikelihood-minLikelihood)/255.0+minLikelihood
-imgIn[mask==False] = 0.5
-imgIn = (imgIn*100).astype(np.uint8)
+#imgIn = imgIn.astype(np.float32)
+#mask = imgIn>0
+#imgIn[mask] = imgIn[mask]*(maxLikelihood-minLikelihood)/255.0+minLikelihood
+#imgIn[mask==False] = 0.5
+#imgIn = (imgIn*100).astype(np.uint8)
 
 # Create wrapped image. 
 warped = ipm.makePerspectiveMapping(imgIn)
 
+
+#t1 = time.time()
+#
+pSrcTmp = np.hstack((pSrc,np.ones((4,1)))).transpose()
+print pSrcTmp
+outTmp = np.matmul(np.linalg.inv(ipm.M),pSrcTmp)
+print outTmp
+print pDstOut.transpose()
+
+#imDimNew = (np.array(imDim)-np.array(imDim)*rHorizon).astype(np.uint)
+#xx, yy = np.meshgrid(range(0,imDimNew[1],10),range(0,imDimNew[0],10))
+#xyz = np.stack((xx,yy,np.ones_like(xx)),axis=2)
+#xyz_ = np.reshape(xyz,(-1,3))
+#xyzImage = np.matmul(ipm.M,xyz_.transpose())
+#xyz_ = np.reshape(xyzImage,xyz.shape)
+
+t2 = time.time()
 # Consider making mapping matrices - like in the previous version. 
-#ipm.M
+
 #mapXY = 
 
-print 'run time: ', (time.time()-t1)*1000,  'ms' 
+print 'run time (all without mapping): ', (t1-t0)*1000,  'ms' 
+print 'run time (create mapping) : ', (t2-t1)*1000,  'ms' 
 
 
 ########################
@@ -191,6 +209,7 @@ ax = fig.add_subplot(111, projection='3d')
 n = 100
 
 points = np.vstack((pCamera,pRayStarts,pDst))
+#points = np.vstack((pCamera,pRayStarts,pDst,xyzImage.transpose()))
 #points = np.vstack((pCamera,linePX,pDst[[0,3],:]))
 
 

@@ -64,7 +64,7 @@ class InversePerspectiveMapping:
             
             self.isHomographyUpdated = True
             
-            return pRayEnds,pDst,rHorizon, rHorizonTrue
+            return pRayEnds,pDst,rHorizon, rHorizonTrue,pSrc,pDstOut
         else:
             raise NameError('update_homography requires both InversePerspectiveMapping.update_intrinsic() and InversePerspectiveMapping.update_extrinsic() functions to be executed. ')
             return []
