@@ -15,7 +15,7 @@ from image2ism_new import InversePerspectiveMapping
 
 
 
-useStereo = False
+useStereo = True
 if useStereo:
     dirTestImage = '/home/pistol/DataFolder/stereo0.png'
     useMultiChannel = 1 # [0,1,2]
@@ -76,7 +76,7 @@ elif useMultiChannel == 2:
 maxDistance = 20.0
 ## Extrinsic Camera settings
 # Camera angling
-degPitch = 20.0 # Degrees in downward direction.
+degPitch = 11.0 # Degrees in downward direction.
 degYaw = 0
 degRoll = 0
 
@@ -150,7 +150,7 @@ ipm.update_intrinsic(fl,ppo,imDimOrg)
 
 # Update extrinsic 
 # (Consider making a function to updated based on a single transformation)
-ipm.update_extrinsic(radPitch,radYaw,radRoll,pCamera)
+ipm.update_extrinsic(radRoll,radPitch,radYaw,pCamera)
 
 # Update homography
 pRayStarts,pDst,rHorizon, rHorizonTrue,pSrc,pDstOut = ipm.update_homography(imDimIn)

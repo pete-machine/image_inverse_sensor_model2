@@ -2,18 +2,15 @@
 import time
 import sys
 import numpy as np
+import tf
 
-import sys
 sys.path.append("/usr/lib/python2.7/dist-packages")
 import cv2
 
-from skimage.draw import polygon
-import matplotlib.pyplot as plt
-import matplotlib.image as mpimg
 #rHorizon = 0
 class InversePerspectiveMapping:
     
-    def __init__(self,resolution=0.1,degCutBelowHorizon=10.0,minLikelihood=0.4,maxLikelihood=0.8,printProcessingTime=False):
+    def __init__(self,resolution=0.1,degCutBelowHorizon=10.0,minLikelihood=0.4,maxLikelihood=0.8,printProcessingTime=False,cam_orientation_offset=[0.0,0.0,0.0]):
         self.isIntrinsicUpdated = False
         self.isExtrinsicUpdated = False
         self.isHomographyUpdated = False
@@ -22,6 +19,7 @@ class InversePerspectiveMapping:
         self.maxLikelihood = maxLikelihood
         self.resolution = resolution
         self.degCutBelowHorizon = degCutBelowHorizon
+        self.cam_orientation_offset = cam_orientation_offset
         
     def update_homography(self,imDim_in):
         self.imDim_in = imDim_in
@@ -96,7 +94,6 @@ class InversePerspectiveMapping:
         return out, fac, abs(dot)
     
     def determineHorizon(self, degCutBelowHorizon=10.0):
-        
         radCutBelowHorizon = degCutBelowHorizon*np.pi/180.0
         
         # Estimate horison only from pitch        
@@ -139,10 +136,44 @@ class InversePerspectiveMapping:
         self.radFOV = 2*np.arctan2(np.array(imDimOrg),2*focal_length)
         self.isIntrinsicUpdated = True
         
+    
+
+    def update_extrinsic_from_tf_transform(self,trans):
+        
+        rot = (trans.transform.rotation.x,trans.transform.rotation.y, trans.transform.rotation.z, trans.transform.rotation.w)
+        euler = tf.transformations.euler_from_quaternion(rot)
+        
+        # Transform optimal frame to normal frame. 
+        if True:
+            T_removeOptical = [[ 0.0,  -1.0,   0.0,   0.0],[  0.0,   0.0,  -1.0,   0.0],[  1.0,   0.0,   0.0,   0.0],[  0.0,   0.0,   0.0,   1.0]]
+            T_tmp = tf.transformations.euler_matrix(euler[0],euler[1], euler[2])
+            Tnew = np.matmul(T_tmp,T_removeOptical)
+            euler = tf.transformations.euler_from_matrix(Tnew)
+            euler = np.array(euler) + self.cam_orientation_offset
+            #print 'roll: ', euler[0], 'pitch: ', euler[1], 'yaw: ', euler[2]
+        
+        pCamera = [trans.transform.translation.x,trans.transform.translation.y,trans.transform.translation.z]
+
+        T = self.update_extrinsic_base(euler[0],euler[1],euler[2], pCamera)        
+        return T
+
+        
+    
+    def update_extrinsic_base(self,roll,pitch,yaw, pCamera):
+        T = tf.transformations.euler_matrix(roll,pitch,yaw)
+        T[0:3,3] = pCamera
+        
+        self.radRoll = roll
+        self.radPitch = pitch
+        self.radYaw = yaw
+        self.pCamera = pCamera
+        self.isExtrinsicUpdated = True
+        self.T_extrinsic = T
+        return T
         
     # Angling of camera: pitch, yaw, roll of
     # Camera position: pCam = [x,y,z] = [x,y,height]
-    def update_extrinsic(self,pitch,yaw,roll, pCamera, inDeg = False):
+    def update_extrinsic(self,roll,pitch,yaw, pCamera, inDeg = False):
         t0 = time.time()
         # In degree convert to radians
         if inDeg:
@@ -150,21 +181,20 @@ class InversePerspectiveMapping:
             yaw = yaw*np.pi/180
             roll = roll*np.pi/180
         
-        T_pitch = np.array([[np.cos(pitch),0,np.sin(pitch),0],[0,1,0,0],[-np.sin(pitch),0,np.cos(pitch),0],[0,0,0,1]])
-        T_yaw = np.array([[np.cos(yaw), -np.sin(yaw),0,0],[np.sin(yaw),np.cos(yaw),0,0],[0,0,1,0],[0,0,0,1]])
-        T_roll = np.array([[1,0,0,0],[0,np.cos(roll),-np.sin(roll),0],[0,np.sin(roll),np.cos(roll),0],[0,0,0,1]])
-    
+        T = self.update_extrinsic_base(roll,pitch,yaw, pCamera)
+#        T_pitch = np.array([[np.cos(pitch),0,np.sin(pitch),0],[0,1,0,0],[-np.sin(pitch),0,np.cos(pitch),0],[0,0,0,1]])
+#        T_yaw = np.array([[np.cos(yaw), -np.sin(yaw),0,0],[np.sin(yaw),np.cos(yaw),0,0],[0,0,1,0],[0,0,0,1]])
+#        T_roll = np.array([[1,0,0,0],[0,np.cos(roll),-np.sin(roll),0],[0,np.sin(roll),np.cos(roll),0],[0,0,0,1]])
+#
+#        T = np.matmul(T_roll,np.matmul(T_pitch,T_yaw))
+#        T[0:3,3] = pCamera 
         
-        self.radPitch = pitch
-        self.radYaw = yaw
-        self.radRoll = roll
-        
-        T = np.matmul(T_roll,np.matmul(T_pitch,T_yaw))
-        T[0:3,3] = pCamera 
-        
-        self.T_extrinsic = T
-        self.pCamera = pCamera
-        self.isExtrinsicUpdated = True
+#        self.radPitch = pitch
+#        self.radYaw = yaw
+#        self.radRoll = roll
+#        self.T_extrinsic = T
+#        self.pCamera = pCamera
+#        self.isExtrinsicUpdated = True
         if self.printProcessingTime: 
                 print "Time (Extrinsic): ", (time.time()-t0)*1000, "ms"
         return T

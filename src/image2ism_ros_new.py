@@ -1,9 +1,11 @@
 #!/usr/bin/env python
 
 import os
+import tf
 import cv2
 import sys
 import rospy
+import tf2_ros
 import numpy as np
 from sensor_msgs.msg import Image, CameraInfo
 from nav_msgs.msg import OccupancyGrid
@@ -69,8 +71,15 @@ if useCameraInfo == False:
 
 ############## Extrinsic Camera settings ####################
 # Use either a tf-tree extrinsic camera settings (useTfForExtrinsic== True).
-useTfForExtrinsic = False # THIS HAVEN'T BEEN IMPLEMENTED YET
+useTfForExtrinsic = rospy.get_param(nodeName+'/useTfForExtrinsic', False)  # THIS HAVEN'T BEEN IMPLEMENTED YET
 targetFrameId = rospy.get_param(nodeName+'/targetFrameId', 'UnknownFrameId') 
+
+if useTfForExtrinsic:    
+    cam_yaw_offset = rospy.get_param(nodeName+'/cam_yaw_offset', 0.0)
+    cam_pitch_offset = rospy.get_param(nodeName+'/cam_pitch_offset', 0.0)
+    cam_roll_offset = rospy.get_param(nodeName+'/cam_roll_offset', 0.0)
+    cam_orientation_offset = [cam_yaw_offset,cam_pitch_offset,cam_roll_offset]
+    
 
 # Or specify all values explictly (useTfForExtrinsic == False) 
 if useTfForExtrinsic == False:
@@ -84,6 +93,7 @@ if useTfForExtrinsic == False:
     
     #pCamera = [cam_xTranslation,cam_yTranslation,cam_zTranslation]
     pCamera = [0,0,cam_zTranslation]
+    cam_orientation_offset = [0.0,0.0,0.0]
 ###############################################################
 
 ## THIS IS NOT IMPLEMENTED 
@@ -98,8 +108,11 @@ else:
     image_sub = message_filters.Subscriber(topicInSingleClass, Image)
     
 #ipm = InversePerspectiveMapping(grid_resolution,degCutBelowHorizon)
-ipm = InversePerspectiveMapping(grid_resolution,degCutBelowHorizon,minLikelihood,maxLikelihood,False)
+ipm = InversePerspectiveMapping(grid_resolution,degCutBelowHorizon,minLikelihood,maxLikelihood,False,cam_orientation_offset)
 
+
+tfBuffer = tf2_ros.Buffer()
+listener = tf2_ros.TransformListener(tfBuffer)
 
 #ignoreRectangleCoord = [float(strPartCoord) for strPartCoord in strIgnoreRectangleCoordinates.split(' ')] 
 #(Xvis, Yvis,rHorizon) = inversePerspectiveMapping(imageWidth, imageHeight, cam_xTranslation, cam_yTranslation, cam_zTranslation, cam_pitch, cam_yaw, cam_FOV);
@@ -169,9 +182,17 @@ def baseSingleClass(data):
     
 
 def image2ism(imgConfidence,imgClass,header):
-            
+    
+    if useTfForExtrinsic:
+        headFrame = header.frame_id
+        headFrame = str.join('/',[strPart for strPart in headFrame.split('/') if strPart is not '']) # Complicated wat to remove the first '/' if it exists. 
+        
+        trans = tfBuffer.lookup_transform(targetFrameId,headFrame, rospy.Time())           
+        ipm.update_extrinsic_from_tf_transform(trans)
+    
+        
     if ipm.isExtrinsicUpdated == False:
-        ipm.update_extrinsic(cam_pitch,cam_yaw,cam_roll,pCamera)    
+        ipm.update_extrinsic(cam_roll,cam_pitch,cam_yaw,pCamera)
 
     for objectType in pubOutputTopics.keys():
         classNumber = outputTopicsNumber[objectType]
